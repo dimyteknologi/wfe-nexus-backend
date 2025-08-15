@@ -8,11 +8,18 @@ export class KotaService {
     private readonly logger = new Logger(KotaService.name);
     constructor(private readonly prisma: PrismaService) {}
 
+    private normalizeName(name: string): string {
+        if (!name) return name;
+        const trimmed = name.trim();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    }
+
     async create(dto: CreateKotaDto) {
+        const normalizeName = this.normalizeName(dto.nama);
         try {
             return await this.prisma.kota.create({
                 data: {
-                nama: dto.nama,
+                nama: normalizeName,
                 },
             });
         } catch (error) {
@@ -44,11 +51,16 @@ export class KotaService {
 
     async update(id: string, dto: UpdateKotaDto) {
         await this.findOne(id);
+
+        const dataToUpdate: { nama?: string } = {};
+        if (dto.nama) {
+            dataToUpdate.nama = this.normalizeName(dto.nama)
+        }
         try {
             return await this.prisma.kota.update({
                 where: { id },
                 data: {
-                    nama: dto.nama,
+                    dataToUpdate,
                 }
             })
         } catch (error) {
