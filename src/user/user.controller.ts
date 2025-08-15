@@ -5,6 +5,7 @@ import { UserService } from './user.service';
 import { Permissions } from 'src/auth/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @UseGuards( JwtAuthGuard, PermissionsGuard)
 @Controller('user')
@@ -14,6 +15,9 @@ export class UserController {
     @Post()
     @Permissions('manage:user')
     @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Create a new user' })
+    @ApiResponse({ status: 201, description: 'User created successfully.' })
+    @ApiResponse({ status: 403, description: 'Forbidden.' })
     create(@Body() dto: CreateUserDto, @Req() req) {
         const currentUserId = req.user.userId
         return this.user.create(dto, currentUserId)
@@ -21,18 +25,21 @@ export class UserController {
 
     @Get()
     @Permissions('manage:user')
+    @ApiOperation({ summary: 'Get all users' })
     findAll() {
         return this.user.findAll()
     }
 
     @Get(':id')
     @Permissions('manage:user')
+    @ApiOperation({ summary: 'Get a single user by ID' })
     findOne(@Param('id') id: string) {
         return this.user.findOne(id)
     }
 
     @Patch(':id')
     @Permissions('manage:user')
+    @ApiOperation({ summary: 'Update a user' })
     update(@Param('id') id: string, @Body() dto: UpdateUserDto, @Req() req) {
         const currentUserId = req.user.userId
         return this.user.update(id, dto, currentUserId)
@@ -41,6 +48,7 @@ export class UserController {
     @Delete(':id')
     @Permissions('manage:user')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Delete a user (soft delete)' })
     remove(@Param('id') id:string, @Req() req) {
         const currentUserId = req.user.userId
         return this.user.remove(id, currentUserId)
