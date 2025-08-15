@@ -3,46 +3,138 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   password  String
   name      String
   roleId    String
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  kotaId    String // Diubah dari Int ke String
+  kota      Kota      @relation(fields: [kotaId], references: [id])
+  createdAt DateTime  @default(now())
   updatedAt DateTime?
   deletedAt DateTime?
   updatedBy String
 }
 
 model Role {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  users     User[]
+  id          String           @id @default(uuid())
+  name        String           @unique
+  users       User[]
   permissions RolePermission[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
-  updatedBy String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+  updatedBy   String
 }
 
 model Permission {
-  id                String    @id @default(uuid())
-  permissionName    String
-  permissionCode    String    @unique
-  description       String?
-  roles             RolePermission[]
+  id               String           @id @default(uuid())
+  permissionName   String
+  permissionCode   String           @unique
+  description      String?
+  roles            RolePermission[]
 }
 
 model RolePermission {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   roleId       String
   permissionId String
-  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id])
+}
+
+model Kota {
+  id           String  @id @default(uuid())
+  nama         String  @unique
+  data_tahunan Tahun[]
+  users        User[]
+
+  @@map("kota")
+}
+
+model Tahun {
+  id         String       @id @default(uuid())
+  tahun      Int
+  kota       Kota         @relation(fields: [kotaId], references: [id])
+  kotaId     String // Diubah dari Int ke String
+  populasi   Populasi?
+  pdrb       PDRB?
+  pertanian  Pertanian?
+  peternakan Peternakan[]
+  perikanan  Perikanan?
+
+  @@unique([tahun, kotaId])
+  @@map("tahun")
+}
+
+model Populasi {
+  id        String @id @default(uuid())
+  tahun     Tahun  @relation(fields: [tahunId], references: [id])
+  tahunId   String @unique // Diubah dari Int ke String
+  laki_laki Float
+  perempuan Float
+
+  @@map("populasi")
+}
+
+model PDRB {
+  id                                       String  @id @default(uuid())
+  tahun                                    Tahun   @relation(fields: [tahunId], references: [id])
+  tahunId                                  String  @unique // Diubah dari Int ke String
+  pertanian_kehutanan_perikanan            Float?
+  pertambangan_penggalian                  Float?
+  industri_pengolahan                      Float?
+  pengadaan_listrik_gas                    Float?
+  pengadaan_air_pengelolaan_sampah         Float?
+  konstruksi                               Float?
+  perdagangan_reparasi_mobil_motor         Float?
+  transportasi_pergudangan                 Float?
+  penyediaan_akomodasi_makan_minum         Float?
+  informasi_komunikasi                     Float?
+  jasa_keuangan_asuransi                   Float?
+  real_estate                              Float?
+  jasa_perusahaan                          Float?
+  administrasi_pemerintahan_jaminan_sosial Float?
+  jasa_pendidikan                          Float?
+  jasa_kesehatan_kegiatan_sosial           Float?
+  jasa_lainnya                             Float?
+  produk_domestik_regional_bruto           Float?
+  pdrb_tanpa_migas                         Float?
+  pdrb_non_pemerintahan                    Float?
+
+  @@map("pdrb")
+}
+
+model Pertanian {
+  id               String @id @default(uuid())
+  tahun            Tahun  @relation(fields: [tahunId], references: [id])
+  tahunId          String @unique // Diubah dari Int ke String
+  lahan_panen_padi Float
+
+  @@map("pertanian")
+}
+
+model Peternakan {
+  id             String  @id @default(uuid())
+  tahun          Tahun   @relation(fields: [tahunId], references: [id])
+  tahunId        String // Diubah dari Int ke String
+  jenis_ternak   String
+  laju_perubahan Float?
+
+  @@map("peternakan")
+}
+
+model Perikanan {
+  id                  String  @id @default(uuid())
+  tahun               Tahun   @relation(fields: [tahunId], references: [id])
+  tahunId             String  @unique // Diubah dari Int ke String
+  laju_perubahan_area Float?
+
+  @@map("perikanan")
 }

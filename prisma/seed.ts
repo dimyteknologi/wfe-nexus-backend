@@ -9,7 +9,9 @@ async function main() {
       { permissionCode: 'read:dashboard', permissionName: 'Dashboard' },
       { permissionCode: 'manage:roles',  permissionName: 'Manage Roles' },
       { permissionCode: 'manage:users',  permissionName: 'Manage Users' },
+      { permissionCode: 'manage:kota',  permissionName: 'Manage Kota' },
     ],
+    skipDuplicates: true,
   });
 
   const basePerms = await prisma.permission.findMany({
@@ -35,6 +37,14 @@ async function main() {
     include: { permissions: true },
   });
 
+  const defaultKota = await prisma.kota.upsert({
+    where: { nama: 'Kantor Pusat' },
+    update: {},
+    create: {
+      nama: 'Kantor Pusat',
+    },
+  });
+
   const passwordHash = await bcrypt.hash('masteradmin@123', 10);
   await prisma.user.upsert({
     where: { email: 'master@admin.com' },
@@ -44,6 +54,7 @@ async function main() {
       name: 'Master Admin',
       password: passwordHash,
       role: { connect: { id: adminRole.id } },
+      kota: { connect: { id: defaultKota.id } },
       updatedBy: 'system',
     },
   });
@@ -52,7 +63,9 @@ async function main() {
   await prisma.$disconnect();
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error(e);
+  const prisma = new PrismaClient();
+  await prisma.$disconnect();
   process.exit(1);
 });
