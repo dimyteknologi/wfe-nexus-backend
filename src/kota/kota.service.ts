@@ -59,9 +59,7 @@ export class KotaService {
         try {
             return await this.prisma.kota.update({
                 where: { id },
-                data: {
-                    dataToUpdate,
-                }
+                data: dataToUpdate
             })
         } catch (error) {
             this.logger.error(`Failed to update kota with ID ${id}: ${error.message}`);
