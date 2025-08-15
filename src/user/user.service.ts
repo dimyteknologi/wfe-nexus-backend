@@ -20,6 +20,7 @@ export class UserService {
                     password: hashedPassword,
                     name: dto.name,
                     roleId: dto.roleId,
+                    kotaId: dto.kotaId,
                     updatedBy: currentUserId
                 },
                 include: {

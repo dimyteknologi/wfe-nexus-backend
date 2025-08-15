@@ -13,4 +13,7 @@ export class CreateUserDto {
 
   @IsUUID()
   roleId: string;
+
+  @IsUUID()
+  kotaId: string;
 }
