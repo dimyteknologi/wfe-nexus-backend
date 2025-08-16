@@ -63,11 +63,11 @@ model Tahun {
   tahun      Int
   kota       Kota         @relation(fields: [kotaId], references: [id])
   kotaId     String // Diubah dari Int ke String
-  populasi   Populasi?
-  pdrb       PDRB?
-  pertanian  Pertanian?
+  populasi   Populasi[]
+  pdrb       PDRB[]
+  pertanian  Pertanian[]
   peternakan Peternakan[]
-  perikanan  Perikanan?
+  perikanan  Perikanan[]
 
   @@unique([tahun, kotaId])
   @@map("tahun")
@@ -79,14 +79,17 @@ model Populasi {
   tahunId   String @unique // Diubah dari Int ke String
   laki_laki Float
   perempuan Float
+  skenario  String
 
+  @@unique([tahunId, skenario])
   @@map("populasi")
 }
 
 model PDRB {
   id                                       String  @id @default(uuid())
   tahun                                    Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId                                  String  @unique // Diubah dari Int ke String
+  tahunId                                  String  @unique
+  skenario                                 String
   pertanian_kehutanan_perikanan            Float?
   pertambangan_penggalian                  Float?
   industri_pengolahan                      Float?
@@ -108,33 +111,40 @@ model PDRB {
   pdrb_tanpa_migas                         Float?
   pdrb_non_pemerintahan                    Float?
 
+  @@unique([tahunId, skenario])
   @@map("pdrb")
 }
 
 model Pertanian {
   id               String @id @default(uuid())
   tahun            Tahun  @relation(fields: [tahunId], references: [id])
-  tahunId          String @unique // Diubah dari Int ke String
+  tahunId          String @unique
+  skenario         String
   lahan_panen_padi Float
 
+  @@unique([tahunId, skenario])
   @@map("pertanian")
 }
 
 model Peternakan {
   id             String  @id @default(uuid())
   tahun          Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId        String // Diubah dari Int ke String
+  tahunId        String
+  skenario       String
   jenis_ternak   String
   laju_perubahan Float?
 
+  @@unique([tahunId, skenario, jenis_ternak])
   @@map("peternakan")
 }
 
 model Perikanan {
   id                  String  @id @default(uuid())
   tahun               Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId             String  @unique // Diubah dari Int ke String
+  tahunId             String  @unique
+  skenario            String
   laju_perubahan_area Float?
 
+  @@unique([tahunId, skenario])
   @@map("perikanan")
 }
