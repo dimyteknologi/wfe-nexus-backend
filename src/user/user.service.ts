@@ -21,6 +21,7 @@ export class UserService {
                     name: dto.name,
                     roleId: dto.roleId,
                     kotaId: dto.kotaId,
+                    institusiId: dto.institusiId,
                     updatedBy: currentUserId
                 },
                 include: {

@@ -9,11 +9,13 @@ import { ConfigModule } from '@nestjs/config';
 import { PermissionsModule } from './permissions/permissions.module';
 import { KotaModule } from './kota/kota.module';
 import { TahunModule } from './tahun/tahun.module';
+import { ImportModule } from './import/import.module';
+import { InstitusiModule } from './institusi/institusi.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule],
+    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

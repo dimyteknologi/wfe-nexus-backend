@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String
-  roleId    String
-  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  kotaId    String // Diubah dari Int ke String
-  kota      Kota      @relation(fields: [kotaId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
-  updatedBy String
+  id          String     @id @default(uuid())
+  email       String     @unique
+  password    String
+  name        String
+  roleId      String
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  kotaId      String
+  kota        Kota       @relation(fields: [kotaId], references: [id])
+  institusiId String
+  institusi   Institusi  @relation(fields: [institusiId], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+  updatedBy   String
 }
 
 model Role {
@@ -47,6 +49,18 @@ model RolePermission {
   permissionId String
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id])
+}
+
+model Institusi {
+  id        String    @id @default(uuid())
+  nama      String    @unique
+  users     User[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+  updatedBy String
+
+  @@map("institusi")
 }
 
 model Kota {

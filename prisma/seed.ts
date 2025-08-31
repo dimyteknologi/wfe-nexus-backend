@@ -45,6 +45,15 @@ async function main() {
     },
   });
 
+  const defaultInstitusi = await prisma.institusi.upsert({
+    where: { nama: 'Institusi Default' },
+    update: {},
+    create: {
+      nama: 'Institusi Default',
+      updatedBy: 'system',
+    },
+  });
+
   const passwordHash = await bcrypt.hash('masteradmin@123', 10);
   await prisma.user.upsert({
     where: { email: 'master@admin.com' },
@@ -55,6 +64,7 @@ async function main() {
       password: passwordHash,
       role: { connect: { id: adminRole.id } },
       kota: { connect: { id: defaultKota.id } },
+      institusi: { connect: { id: defaultInstitusi.id } },
       updatedBy: 'system',
     },
   });

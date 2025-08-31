@@ -34,4 +34,11 @@ export class CreateUserDto {
   })
   @IsUUID()
   kotaId: string;
+
+  @ApiProperty({
+    example: 'g1h2i3j4-k5l6-7890-1234-567890abcdef',
+    description: 'The UUID of the institution the user belongs to',
+  })
+  @IsUUID()
+  institusiId: string;
 }

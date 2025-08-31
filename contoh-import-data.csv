@@ -1,0 +1,17 @@
+tahun,kategori,parameter,nilai
+2024,populasi,laki_laki,500000
+2024,populasi,perempuan,485000
+2024,pdrb,pertanian_kehutanan_perikanan,1500000000
+2024,pdrb,industri_pengolahan,2500000000
+2024,pdrb,perdagangan_reparasi_mobil_motor,1800000000
+2024,pertanian,lahan_panen_padi,15000
+2024,peternakan,laju_sapi,0.05
+2024,peternakan,laju_kambing,0.08
+2024,peternakan,laju_ayam,0.12
+2024,perikanan,laju_perubahan_area,0.03
+2025,populasi,laki_laki,510000
+2025,populasi,perempuan,492000
+2025,pdrb,pertanian_kehutanan_perikanan,1550000000
+2025,pdrb,industri_pengolahan,2600000000
+2025,pertanian,lahan_panen_padi,15500
+2025,perikanan,laju_perubahan_area,0.035
