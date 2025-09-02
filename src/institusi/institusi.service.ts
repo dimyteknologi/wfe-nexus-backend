@@ -9,7 +9,7 @@ export class InstitusiService {
 
   async create(createInstitusiDto: CreateInstitusiDto, currentUserId: string) {
     try {
-      const institusi = await this.prisma.institusi.create({
+      const institusi = await this.prisma.institution.create({
         data: {
           ...createInstitusiDto,
           updatedBy: currentUserId,
@@ -18,14 +18,14 @@ export class InstitusiService {
       return institusi;
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new BadRequestException('Nama institusi sudah digunakan');
+        throw new BadRequestException('Institution name already exists');
       }
       throw error;
     }
   }
 
   async findAll() {
-    return this.prisma.institusi.findMany({
+    return this.prisma.institution.findMany({
       where: {
         deletedAt: null,
       },
@@ -42,13 +42,13 @@ export class InstitusiService {
         },
       },
       orderBy: {
-        nama: 'asc',
+        name: 'asc',
       },
     });
   }
 
   async findOne(id: string) {
-    const institusi = await this.prisma.institusi.findFirst({
+    const institusi = await this.prisma.institution.findFirst({
       where: {
         id,
         deletedAt: null,
@@ -68,10 +68,10 @@ export class InstitusiService {
                 name: true,
               },
             },
-            kota: {
+            cities: {
               select: {
                 id: true,
-                nama: true,
+                name: true,
               },
             },
           },
@@ -80,14 +80,14 @@ export class InstitusiService {
     });
 
     if (!institusi) {
-      throw new NotFoundException('Institusi tidak ditemukan');
+      throw new NotFoundException('Institution not found');
     }
 
     return institusi;
   }
 
   async update(id: string, updateInstitusiDto: UpdateInstitusiDto, currentUserId: string) {
-    const existingInstitusi = await this.prisma.institusi.findFirst({
+    const existingInstitusi = await this.prisma.institution.findFirst({
       where: {
         id,
         deletedAt: null,
@@ -95,11 +95,11 @@ export class InstitusiService {
     });
 
     if (!existingInstitusi) {
-      throw new NotFoundException('Institusi tidak ditemukan');
+      throw new NotFoundException('Institution not found');
     }
 
     try {
-      const institusi = await this.prisma.institusi.update({
+      const institusi = await this.prisma.institution.update({
         where: { id },
         data: {
           ...updateInstitusiDto,
@@ -110,14 +110,14 @@ export class InstitusiService {
       return institusi;
     } catch (error) {
       if (error.code === 'P2002') {
-        throw new BadRequestException('Nama institusi sudah digunakan');
+        throw new BadRequestException('Institution name already exists');
       }
       throw error;
     }
   }
 
   async remove(id: string, currentUserId: string) {
-    const existingInstitusi = await this.prisma.institusi.findFirst({
+    const existingInstitusi = await this.prisma.institution.findFirst({
       where: {
         id,
         deletedAt: null,
@@ -125,23 +125,23 @@ export class InstitusiService {
     });
 
     if (!existingInstitusi) {
-      throw new NotFoundException('Institusi tidak ditemukan');
+      throw new NotFoundException('Institution not found');
     }
 
     const userCount = await this.prisma.user.count({
       where: {
-        institusiId: id,
+        institutionId: id,
         deletedAt: null,
       },
     });
 
     if (userCount > 0) {
       throw new BadRequestException(
-        `Tidak dapat menghapus institusi yang masih memiliki ${userCount} user aktif`
+        `Cannot delete institution that still has ${userCount} active users`
       );
     }
 
-    const institusi = await this.prisma.institusi.update({
+    const institusi = await this.prisma.institution.update({
       where: { id },
       data: {
         deletedAt: new Date(),
@@ -151,7 +151,7 @@ export class InstitusiService {
     });
 
     return {
-      message: 'Institusi berhasil dihapus',
+      message: 'Institution deleted successfully',
       institusi,
     };
   }

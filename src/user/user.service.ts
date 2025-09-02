@@ -20,8 +20,8 @@ export class UserService {
                     password: hashedPassword,
                     name: dto.name,
                     roleId: dto.roleId,
-                    kotaId: dto.kotaId,
-                    institusiId: dto.institusiId,
+                    cityId: dto.cityId,
+                    institutionId: dto.institutionId,
                     updatedBy: currentUserId
                 },
                 include: {

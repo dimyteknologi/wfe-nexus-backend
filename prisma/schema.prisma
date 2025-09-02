@@ -8,20 +8,21 @@ datasource db {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  email       String     @unique
-  password    String
-  name        String
-  roleId      String
-  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  kotaId      String
-  kota        Kota       @relation(fields: [kotaId], references: [id])
-  institusiId String
-  institusi   Institusi  @relation(fields: [institusiId], references: [id])
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime?
-  deletedAt   DateTime?
-  updatedBy   String
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  name          String
+  roleId        String
+  role          Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  cityId        String
+  cities        Cities       @relation(fields: [cityId], references: [id])
+  institutionId String
+  institution   Institution  @relation(fields: [institutionId], references: [id])
+  scenarios     Scenario[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  updatedBy     String
 }
 
 model Role {
@@ -51,114 +52,166 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id])
 }
 
-model Institusi {
+model Institution {
   id        String    @id @default(uuid())
-  nama      String    @unique
+  name      String    @unique
   users     User[]
   createdAt DateTime  @default(now())
   updatedAt DateTime?
   deletedAt DateTime?
   updatedBy String
-
-  @@map("institusi")
+  
+  @@map("institution")
 }
 
-model Kota {
-  id           String  @id @default(uuid())
-  nama         String  @unique
-  data_tahunan Tahun[]
-  users        User[]
+model Cities {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  users       User[]
+  gdrp        GDRP[]
+  population  Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
 
-  @@map("kota")
+  @@map("cities")
 }
 
-model Tahun {
-  id         String       @id @default(uuid())
-  tahun      Int
-  kota       Kota         @relation(fields: [kotaId], references: [id])
-  kotaId     String // Diubah dari Int ke String
-  populasi   Populasi[]
-  pdrb       PDRB[]
-  pertanian  Pertanian[]
-  peternakan Peternakan[]
-  perikanan  Perikanan[]
+model Years {
+  id         String @id @default(uuid())
+  year       Int    @unique
+  gdrp       GDRP[]
+  population Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
 
-  @@unique([tahun, kotaId])
-  @@map("tahun")
+  @@map("year")
 }
 
-model Populasi {
-  id        String @id @default(uuid())
-  tahun     Tahun  @relation(fields: [tahunId], references: [id])
-  tahunId   String @unique // Diubah dari Int ke String
-  laki_laki Float
-  perempuan Float
-  skenario  String
+model Scenario {
+  id            String                  @id @default(uuid())
+  name          String
+  userId        String
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gdrp          GDRP[]
+  population    Population[]
+  agriculture   Agriculture[]
+  livestock     Livestock[]
+  fisheries     Fisheries[]
+  configurations ScenarioConfiguration[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  updatedBy     String
 
-  @@unique([tahunId, skenario])
-  @@map("populasi")
+  @@map("scenario")
 }
 
-model PDRB {
-  id                                       String  @id @default(uuid())
-  tahun                                    Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId                                  String  @unique
-  skenario                                 String
-  pertanian_kehutanan_perikanan            Float?
-  pertambangan_penggalian                  Float?
-  industri_pengolahan                      Float?
-  pengadaan_listrik_gas                    Float?
-  pengadaan_air_pengelolaan_sampah         Float?
-  konstruksi                               Float?
-  perdagangan_reparasi_mobil_motor         Float?
-  transportasi_pergudangan                 Float?
-  penyediaan_akomodasi_makan_minum         Float?
-  informasi_komunikasi                     Float?
-  jasa_keuangan_asuransi                   Float?
-  real_estate                              Float?
-  jasa_perusahaan                          Float?
-  administrasi_pemerintahan_jaminan_sosial Float?
-  jasa_pendidikan                          Float?
-  jasa_kesehatan_kegiatan_sosial           Float?
-  jasa_lainnya                             Float?
-  produk_domestik_regional_bruto           Float?
-  pdrb_tanpa_migas                         Float?
-  pdrb_non_pemerintahan                    Float?
+model ScenarioConfiguration {
+  id         String    @id @default(uuid())
+  scenarioId String
+  scenario   Scenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  name       String
+  value      String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime?
 
-  @@unique([tahunId, skenario])
-  @@map("pdrb")
+  @@map("scenario_configuration")
 }
 
-model Pertanian {
-  id               String @id @default(uuid())
-  tahun            Tahun  @relation(fields: [tahunId], references: [id])
-  tahunId          String @unique
-  skenario         String
-  lahan_panen_padi Float
+model DataType {
+  id          String @id @default(uuid())
+  name        String @unique
+  gdrp        GDRP[]
+  population  Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
 
-  @@unique([tahunId, skenario])
-  @@map("pertanian")
+  @@map("data_type")
 }
 
-model Peternakan {
-  id             String  @id @default(uuid())
-  tahun          Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId        String
-  skenario       String
-  jenis_ternak   String
-  laju_perubahan Float?
+model Population {
+  id          String    @id @default(uuid())
+  city        Cities    @relation(fields: [cityId], references: [id])
+  cityId      String
+  year        Years     @relation(fields: [yearId], references: [id])
+  yearId      String    @unique
+  dataType    DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId  String
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId  String?
+  male        Float
+  female      Float
+  total       Float
+  createdAt   DateTime  @default(now())
 
-  @@unique([tahunId, skenario, jenis_ternak])
-  @@map("peternakan")
+  @@map("population")
 }
 
-model Perikanan {
-  id                  String  @id @default(uuid())
-  tahun               Tahun   @relation(fields: [tahunId], references: [id])
-  tahunId             String  @unique
-  skenario            String
-  laju_perubahan_area Float?
+model GDRP {
+  id          String    @id @default(uuid())
+  city        Cities    @relation(fields: [cityId], references: [id])
+  cityId      String
+  year        Years     @relation(fields: [yearId], references: [id])
+  yearId      String    @unique
+  dataType    DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId  String
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId  String?
+  value       Float
+  sector      String
+  createdAt   DateTime  @default(now())
 
-  @@unique([tahunId, skenario])
-  @@map("perikanan")
+  @@map("gdrp")
+}
+
+model Agriculture {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  rice_cultivation_area Float
+  createdAt             DateTime  @default(now())
+
+  @@map("agriculture")
+}
+
+model Livestock {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  livestock_type        String
+  change_rate           Float?
+  createdAt             DateTime  @default(now())
+
+  @@map("livestock")
+}
+
+model Fisheries {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  growth_rate           Float?
+  createdAt             DateTime  @default(now())
+
+  @@map("fisheries")
 }

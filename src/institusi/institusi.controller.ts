@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { InstitusiService } from './institusi.service';
 import { CreateInstitusiDto } from './dto/create-institusi.dto';
 import { UpdateInstitusiDto } from './dto/update-institusi.dto';
@@ -20,6 +20,7 @@ import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissions } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('institusi')
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('institusi')
 export class InstitusiController {

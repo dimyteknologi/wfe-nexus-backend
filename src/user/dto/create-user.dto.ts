@@ -30,15 +30,15 @@ export class CreateUserDto {
 
   @ApiProperty({
     example: 'f1e2d3c4-b5a6-7890-1234-567890abcdef',
-    description: 'The UUID of the city (kota) the user belongs to',
+    description: 'The UUID of the city the user belongs to',
   })
   @IsUUID()
-  kotaId: string;
+  cityId: string;
 
   @ApiProperty({
     example: 'g1h2i3j4-k5l6-7890-1234-567890abcdef',
     description: 'The UUID of the institution the user belongs to',
   })
   @IsUUID()
-  institusiId: string;
+  institutionId: string;
 }

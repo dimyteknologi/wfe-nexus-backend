@@ -11,45 +11,42 @@ export class TahunService {
 
     async create(dto: CreateTahunDto) {
         try {
-            return await this.prisma.tahun.create({
-                data: dto,
-                include: { kota: true }
+            return await this.prisma.years.create({
+                data: dto
             })
         } catch (error) {
             if (
                 error instanceof PrismaClientKnownRequestError && error.code == 'P2002'
             ) {
-                throw new ConflictException('Tahun ini sudah ada untuk kota yang dipilih');
+                throw new ConflictException('This year already exists');
             }
-            this.logger.error(`Gagal membuat tahun: ${error.message}`)
-            throw new InternalServerErrorException('Gagal membuat tahun')
+            this.logger.error(`Failed to create year: ${error.message}`)
+            throw new InternalServerErrorException('Failed to create year')
         }
     }
 
     async findAll() {
         try {
-            return await this.prisma.tahun.findMany({
-                orderBy: [{kota: { nama: 'asc'}}, { tahun: 'desc'}],
-                include: { kota: true }
+            return await this.prisma.years.findMany({
+                orderBy: { year: 'desc'}
             });
         } catch (error) {
-            this.logger.error(`Gagal menemukan semua tahun : ${error.message}`);
-            throw new InternalServerErrorException('Gagal menemukan semua tahun');
+            this.logger.error(`Failed to find all years: ${error.message}`);
+            throw new InternalServerErrorException('Failed to find all years');
         }
     }
 
     async findOne(id: string) {
-        const tahun = await this.prisma.tahun.findUnique({
+        const tahun = await this.prisma.years.findUnique({
             where: { id },
             include: {
-                kota: true,
-                populasi: true,
-                pdrb: true,
-                pertanian: true,
+                population: true,
+                gdrp: true,
+                agriculture: true,
             },
         });
         if (!tahun) {
-            throw new NotFoundException(`Tahun dengan ID ${id} tidak ditemukan`);
+            throw new NotFoundException(`Year with ID ${id} not found`);
         }
         return tahun;
     }
@@ -57,31 +54,30 @@ export class TahunService {
     async update(id: string, dto: UpdateTahunDto) {
         await this.findOne(id);
         try {
-            return await this.prisma.tahun.update({
+            return await this.prisma.years.update({
                 where: { id },
-                data: dto,
-                include: { kota: true },
+                data: dto
             });
         } catch (error) {
             if (
                 error instanceof PrismaClientKnownRequestError &&
                 error.code === 'P2002'
             ) {
-            throw new ConflictException('Tahun ini sudah ada untuk kota yang dipilih.');
+            throw new ConflictException('This year already exists.');
             }
-            this.logger.error(`Gagal memperbarui tahun dengan ID ${id}: ${error.message}`);
-            throw new InternalServerErrorException('Gagal memperbarui entri tahun.');
+            this.logger.error(`Failed to update year with ID ${id}: ${error.message}`);
+            throw new InternalServerErrorException('Failed to update year entry.');
         }
     }
 
     async remove(id: string) {
         await this.findOne(id);
         try {
-            await this.prisma.tahun.delete({ where: { id } });
-            return { message: `Tahun dengan ID ${id} berhasil dihapus.` };
+            await this.prisma.years.delete({ where: { id } });
+            return { message: `Year with ID ${id} deleted successfully.` };
         } catch (error) {
-            this.logger.error(`Gagal menghapus tahun dengan ID ${id}: ${error.message}`);
-            throw new InternalServerErrorException('Gagal menghapus entri tahun.');
+            this.logger.error(`Failed to delete year with ID ${id}: ${error.message}`);
+            throw new InternalServerErrorException('Failed to delete year entry.');
         }
     }
 

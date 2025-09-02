@@ -5,9 +5,10 @@ import { UserService } from './user.service';
 import { Permissions } from 'src/auth/decorators/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @UseGuards( JwtAuthGuard, PermissionsGuard)
+@ApiBearerAuth('JWT-auth')
 @Controller('user')
 export class UserController {
     constructor(private readonly user: UserService) {}

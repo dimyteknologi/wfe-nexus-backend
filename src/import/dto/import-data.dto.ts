@@ -3,28 +3,28 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class ImportDataRowDto {
   @ApiProperty({
-    description: 'Tahun data',
+    description: 'Data year',
     example: 2024
   })
   @IsNumber()
   tahun: number;
 
   @ApiProperty({
-    description: 'Kategori data (populasi, pdrb, pertanian, peternakan, perikanan)',
+    description: 'Data category (population, gdrp, agriculture, livestock, fisheries)',
     example: 'populasi'
   })
   @IsString()
   kategori: string;
 
   @ApiProperty({
-    description: 'Parameter spesifik sesuai kategori',
+    description: 'Specific parameter according to category',
     example: 'laki_laki'
   })
   @IsString()
   parameter: string;
 
   @ApiProperty({
-    description: 'Nilai data',
+    description: 'Data value',
     example: 1000000
   })
   @IsNumber()
@@ -39,26 +39,26 @@ export class ImportResultDto {
   status: string;
 
   @ApiProperty({
-    description: 'Jumlah baris yang berhasil diimport',
+    description: 'Number of rows imported successfully',
     example: 150
   })
   imported: number;
 
   @ApiProperty({
-    description: 'Jumlah baris yang gagal diimport',
+    description: 'Number of rows that failed to import',
     example: 5
   })
   failed: number;
 
   @ApiProperty({
-    description: 'Detail error jika ada',
+    description: 'Error details if any',
     example: []
   })
   errors: string[];
 
   @ApiProperty({
-    description: 'Pesan tambahan',
-    example: 'Data berhasil diimport'
+    description: 'Additional message',
+    example: 'Data imported successfully'
   })
   message: string;
 }

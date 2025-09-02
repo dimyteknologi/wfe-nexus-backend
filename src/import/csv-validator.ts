@@ -44,7 +44,7 @@ export class CsvValidator {
         row: rowNumber,
         field: 'general',
         value: row,
-        message: `Baris tidak lengkap. Diharapkan ${this.REQUIRED_HEADERS.length} kolom, ditemukan ${row.length}`
+        message: `Incomplete row. Expected ${this.REQUIRED_HEADERS.length} columns, found ${row.length}`
       });
       return errors;
     }
@@ -58,7 +58,7 @@ export class CsvValidator {
         row: rowNumber,
         field: 'tahun',
         value: tahun,
-        message: 'Tahun harus berupa angka valid antara 1900-2100'
+        message: 'Year must be a valid number between 1900-2100'
       });
     }
 
@@ -69,7 +69,7 @@ export class CsvValidator {
         row: rowNumber,
         field: 'kategori',
         value: kategori,
-        message: `Kategori tidak valid. Kategori yang diizinkan: ${this.ALLOWED_CATEGORIES.join(', ')}`
+        message: `Invalid category. Allowed categories: ${this.ALLOWED_CATEGORIES.join(', ')}`
       });
     }
 
@@ -80,18 +80,18 @@ export class CsvValidator {
         row: rowNumber,
         field: 'parameter',
         value: parameter,
-        message: 'Parameter tidak boleh kosong'
+        message: 'Parameter cannot be empty'
       });
     } else if (cleanKategori && this.CATEGORY_PARAMETERS[cleanKategori]) {
       const allowedParams = this.CATEGORY_PARAMETERS[cleanKategori];
       if (cleanKategori === 'peternakan') {
-        // Special validation for peternakan (laju_{jenis_ternak})
+        // Special validation for livestock (laju_{jenis_ternak})
         if (!cleanParameter.startsWith('laju_') || cleanParameter === 'laju_') {
           errors.push({
             row: rowNumber,
             field: 'parameter',
             value: parameter,
-            message: 'Parameter peternakan harus berformat: laju_{jenis_ternak}'
+            message: 'Livestock parameter must be in format: laju_{jenis_ternak}'
           });
         }
       } else if (allowedParams.length > 0 && !allowedParams.includes(cleanParameter)) {
@@ -99,19 +99,19 @@ export class CsvValidator {
           row: rowNumber,
           field: 'parameter',
           value: parameter,
-          message: `Parameter tidak valid untuk kategori ${cleanKategori}. Parameter yang diizinkan: ${allowedParams.join(', ')}`
+          message: `Invalid parameter for category ${cleanKategori}. Allowed parameters: ${allowedParams.join(', ')}`
         });
       }
     }
 
-    // Validate nilai
+    // Validate value
     const nilaiNum = parseFloat(nilai);
     if (isNaN(nilaiNum)) {
       errors.push({
         row: rowNumber,
         field: 'nilai',
         value: nilai,
-        message: 'Nilai harus berupa angka'
+        message: 'Value must be a number'
       });
     }
 
@@ -122,7 +122,7 @@ export class CsvValidator {
     if (!data || data.length === 0) {
       return {
         isValid: false,
-        errors: [{ row: 0, field: 'general', value: null, message: 'File CSV kosong' }],
+        errors: [{ row: 0, field: 'general', value: null, message: 'CSV file is empty' }],
         validRows: []
       };
     }
@@ -136,7 +136,7 @@ export class CsvValidator {
           row: 1, 
           field: 'headers', 
           value: headers, 
-          message: `Header tidak sesuai. Diharapkan: ${this.REQUIRED_HEADERS.join(', ')}` 
+          message: `Header mismatch. Expected: ${this.REQUIRED_HEADERS.join(', ')}` 
         }],
         validRows: []
       };

@@ -8,7 +8,7 @@ import { CreateKotaDto } from './dto/create-kota.dto';
 import { UpdateKotaDto } from './dto/update-kota.dto';
 
 @ApiTags('Kota Management')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('kota')
 export class KotaController {

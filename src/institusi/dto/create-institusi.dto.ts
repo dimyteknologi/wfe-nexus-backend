@@ -9,5 +9,5 @@ export class CreateInstitusiDto {
   @IsString()
   @IsNotEmpty()
   @Length(2, 100)
-  nama: string;
+  name: string;
 }

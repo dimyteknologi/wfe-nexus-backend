@@ -21,7 +21,7 @@ export class ImportService {
       if (!worksheet) {
         return {
           isValid: false,
-          errors: ['File CSV kosong atau tidak valid'],
+          errors: ['CSV file is empty or invalid'],
           summary: {
             totalRows: 0,
             validRows: 0,
@@ -40,7 +40,7 @@ export class ImportService {
 
       return {
         isValid: validationResult.isValid,
-        errors: validationResult.errors.map(err => `Baris ${err.row}: ${err.message}`),
+        errors: validationResult.errors.map(err => `Row ${err.row}: ${err.message}`),
         summary: {
           totalRows: csvData.length - 1,
           validRows: validationResult.validRows.length,
@@ -62,13 +62,13 @@ export class ImportService {
     }
   }
 
-  async importFromCsv(file: Express.Multer.File, kotaId: string, skenario: string = 'baseline'): Promise<ImportResultDto> {
+  async importFromCsv(file: Express.Multer.File, kotaId: string, skenario: string | null = null): Promise<ImportResultDto> {
     if (!file) {
-      throw new BadRequestException('File tidak ditemukan');
+      throw new BadRequestException('File not found');
     }
 
     if (!file.originalname.toLowerCase().endsWith('.csv')) {
-      throw new BadRequestException('File harus berformat .csv');
+      throw new BadRequestException('File must be in .csv format');
     }
 
     let imported = 0;
@@ -76,6 +76,15 @@ export class ImportService {
     const errors: string[] = [];
 
     try {
+      // Get the "histories" data type ID for imported data
+      const historiesDataType = await this.prisma.dataType.findUnique({
+        where: { name: 'histories' }
+      });
+
+      if (!historiesDataType) {
+        throw new BadRequestException('Data type "histories" not found. Please run the seeder first.');
+      }
+
       const workbook = new ExcelJS.Workbook();
       const stream = new Readable();
       stream.push(file.buffer);
@@ -84,7 +93,7 @@ export class ImportService {
       const worksheet = workbook.getWorksheet(1);
 
       if (!worksheet) {
-        throw new BadRequestException('File CSV kosong atau tidak valid');
+        throw new BadRequestException('CSV file is empty or invalid');
       }
 
       const csvData: any[][] = [];
@@ -97,9 +106,9 @@ export class ImportService {
       
       if (!validationResult.isValid) {
         const errorMessages = validationResult.errors.map(err => 
-          `Baris ${err.row}: ${err.message}`
+          `Row ${err.row}: ${err.message}`
         );
-        throw new BadRequestException(`Validasi CSV gagal:\n${errorMessages.join('\n')}`);
+        throw new BadRequestException(`CSV validation failed:\n${errorMessages.join('\n')}`);
       }
 
       const dataGroups = new Map<string, ImportDataRowDto[]>();
@@ -117,7 +126,7 @@ export class ImportService {
         const tahunNum = parseInt(tahun);
 
         try {
-          await this.processDataGroup(kotaId, tahunNum, kategori, rows, skenario);
+          await this.processDataGroup(kotaId, tahunNum, kategori, rows, skenario, historiesDataType.id);
           imported += rows.length;
         } catch (error) {
           errors.push(`Error processing group ${groupKey}: ${error.message}`);
@@ -130,7 +139,7 @@ export class ImportService {
         imported,
         failed,
         errors,
-        message: failed === 0 ? 'Semua data berhasil diimport' : `${imported} data berhasil diimport, ${failed} data gagal`
+        message: failed === 0 ? 'All data imported successfully' : `${imported} data imported successfully, ${failed} data failed`
       };
 
     } catch (error) {
@@ -138,67 +147,89 @@ export class ImportService {
     }
   }
 
-  private async processDataGroup(kotaId: string, tahun: number, kategori: string, rows: ImportDataRowDto[], skenario: string) {
-    // Pastikan record tahun ada
-    let tahunRecord = await this.prisma.tahun.findFirst({
-      where: { tahun, kotaId }
+  private async processDataGroup(kotaId: string, tahun: number, kategori: string, rows: ImportDataRowDto[], skenario: string | null, dataTypeId: string) {
+    // Ensure year record exists
+    let tahunRecord = await this.prisma.years.findFirst({
+      where: { year: tahun }
     });
 
     if (!tahunRecord) {
-      tahunRecord = await this.prisma.tahun.create({
-        data: { tahun, kotaId }
+      tahunRecord = await this.prisma.years.create({
+        data: { year: tahun }
       });
     }
 
     switch (kategori) {
       case 'populasi':
-        await this.processPopulasiData(tahunRecord.id, rows, skenario);
+        await this.processPopulasiData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       case 'pdrb':
-        await this.processPdrbData(tahunRecord.id, rows, skenario);
+        await this.processPdrbData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       case 'pertanian':
-        await this.processPertanianData(tahunRecord.id, rows, skenario);
+        await this.processPertanianData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       case 'peternakan':
-        await this.processPeternakanData(tahunRecord.id, rows, skenario);
+        await this.processPeternakanData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       case 'perikanan':
-        await this.processPerikananData(tahunRecord.id, rows, skenario);
+        await this.processPerikananData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       default:
-        throw new Error(`Kategori tidak dikenal: ${kategori}`);
+        throw new Error(`Unknown category: ${kategori}`);
     }
   }
 
-  private async processPopulasiData(tahunId: string, rows: ImportDataRowDto[], skenario: string) {
-    const populasiData: any = { skenario };
+  private async processPopulasiData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    const populasiData: any = {};
     
     for (const row of rows) {
       switch (row.parameter) {
         case 'laki_laki':
-          populasiData.laki_laki = row.nilai;
+          populasiData.male = row.nilai;
           break;
         case 'perempuan':
-          populasiData.perempuan = row.nilai;
+          populasiData.female = row.nilai;
           break;
         default:
-          throw new Error(`Parameter tidak dikenal untuk populasi: ${row.parameter}`);
+          throw new Error(`Unknown parameter for population: ${row.parameter}`);
       }
     }
 
-    await this.prisma.populasi.upsert({
+    // Calculate total if both male and female are provided
+    if (populasiData.male !== undefined && populasiData.female !== undefined) {
+      populasiData.total = populasiData.male + populasiData.female;
+    }
+
+    // Cari existing record atau buat baru
+    const existingRecord = await this.prisma.population.findFirst({
       where: { 
-        tahunId_skenario: { tahunId, skenario }
-      },
-      update: populasiData,
-      create: { ...populasiData, tahunId }
+        yearId: tahunId,
+        scenarioId: skenario, // Will be null for histories data type
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      }
     });
+
+    if (existingRecord) {
+      await this.prisma.population.update({
+        where: { id: existingRecord.id },
+        data: populasiData
+      });
+    } else {
+      await this.prisma.population.create({
+        data: { 
+          ...populasiData, 
+          yearId: tahunId,
+          scenarioId: skenario, // Will be null for histories data type
+          cityId: kotaId,
+          dataTypeId: dataTypeId
+        }
+      });
+    }
   }
 
-  private async processPdrbData(tahunId: string, rows: ImportDataRowDto[], skenario: string) {
-    const pdrbData: any = { skenario };
-    
+  private async processPdrbData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
     const allowedPdrbParams = [
       'pertanian_kehutanan_perikanan', 'pertambangan_penggalian', 'industri_pengolahan',
       'pengadaan_listrik_gas', 'pengadaan_air_pengelolaan_sampah', 'konstruksi',
@@ -208,46 +239,85 @@ export class ImportService {
       'jasa_lainnya', 'produk_domestik_regional_bruto', 'pdrb_tanpa_migas', 'pdrb_non_pemerintahan'
     ];
 
+    // Create separate records for each sector
     for (const row of rows) {
       if (allowedPdrbParams.includes(row.parameter)) {
-        pdrbData[row.parameter] = row.nilai;
+        // Check if record exists
+        const existingRecord = await this.prisma.gDRP.findFirst({
+          where: { 
+            yearId: tahunId,
+            scenarioId: skenario, // Will be null for histories data type
+            sector: row.parameter,
+            cityId: kotaId,
+            dataTypeId: dataTypeId
+          }
+        });
+
+        if (existingRecord) {
+          await this.prisma.gDRP.update({
+            where: { id: existingRecord.id },
+            data: { value: row.nilai }
+          });
+        } else {
+          await this.prisma.gDRP.create({
+            data: {
+              yearId: tahunId,
+              scenarioId: skenario, // Will be null for histories data type
+              cityId: kotaId,
+              dataTypeId: dataTypeId,
+              sector: row.parameter,
+              value: row.nilai
+            }
+          });
+        }
       } else {
-        throw new Error(`Parameter tidak dikenal untuk PDRB: ${row.parameter}`);
+        throw new Error(`Unknown parameter for GDRP: ${row.parameter}`);
       }
     }
-
-    await this.prisma.pDRB.upsert({
-      where: { 
-        tahunId_skenario: { tahunId, skenario }
-      },
-      update: pdrbData,
-      create: { ...pdrbData, tahunId }
-    });
   }
 
-  private async processPertanianData(tahunId: string, rows: ImportDataRowDto[], skenario: string) {
-    const pertanianData: any = { skenario };
+  private async processPertanianData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    const pertanianData: any = {};
     
     for (const row of rows) {
       switch (row.parameter) {
         case 'lahan_panen_padi':
-          pertanianData.lahan_panen_padi = row.nilai;
+          pertanianData.rice_cultivation_area = row.nilai;
           break;
         default:
-          throw new Error(`Parameter tidak dikenal untuk pertanian: ${row.parameter}`);
+          throw new Error(`Unknown parameter for agriculture: ${row.parameter}`);
       }
     }
 
-    await this.prisma.pertanian.upsert({
+    // Cari existing record atau buat baru
+    const existingRecord = await this.prisma.agriculture.findFirst({
       where: { 
-        tahunId_skenario: { tahunId, skenario }
-      },
-      update: pertanianData,
-      create: { ...pertanianData, tahunId }
+        yearId: tahunId,
+        scenarioId: skenario, // Will be null for histories data type
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      }
     });
+
+    if (existingRecord) {
+      await this.prisma.agriculture.update({
+        where: { id: existingRecord.id },
+        data: pertanianData
+      });
+    } else {
+      await this.prisma.agriculture.create({
+        data: { 
+          ...pertanianData, 
+          yearId: tahunId,
+          scenarioId: skenario, // Will be null for histories data type
+          cityId: kotaId,
+          dataTypeId: dataTypeId
+        }
+      });
+    }
   }
 
-  private async processPeternakanData(tahunId: string, rows: ImportDataRowDto[], skenario: string) {
+  private async processPeternakanData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
     // Group by jenis_ternak
     const peternakanGroups = new Map<string, number>();
     
@@ -256,45 +326,80 @@ export class ImportService {
       if (jenisParam === 'laju' && jenisValue) {
         peternakanGroups.set(jenisValue, row.nilai);
       } else {
-        throw new Error(`Parameter tidak dikenal untuk peternakan: ${row.parameter}. Format yang diharapkan: laju_{jenis_ternak}`);
+        throw new Error(`Unknown parameter for livestock: ${row.parameter}. Expected format: laju_{livestock_type}`);
       }
     }
 
     for (const [jenisTerak, lajuPerubahan] of peternakanGroups) {
-      await this.prisma.peternakan.upsert({
+      // Cari existing record atau buat baru
+      const existingRecord = await this.prisma.livestock.findFirst({
         where: { 
-          tahunId_skenario_jenis_ternak: { tahunId, skenario, jenis_ternak: jenisTerak }
-        },
-        update: { laju_perubahan: lajuPerubahan },
-        create: { 
-          tahunId, 
-          skenario, 
-          jenis_ternak: jenisTerak, 
-          laju_perubahan: lajuPerubahan 
+          yearId: tahunId,
+          scenarioId: skenario, // Will be null for histories data type
+          livestock_type: jenisTerak,
+          cityId: kotaId,
+          dataTypeId: dataTypeId
         }
       });
+
+      if (existingRecord) {
+        await this.prisma.livestock.update({
+          where: { id: existingRecord.id },
+          data: { change_rate: lajuPerubahan }
+        });
+      } else {
+        await this.prisma.livestock.create({
+          data: { 
+            yearId: tahunId,
+            scenarioId: skenario, // Will be null for histories data type
+            cityId: kotaId,
+            dataTypeId: dataTypeId,
+            livestock_type: jenisTerak,
+            change_rate: lajuPerubahan
+          }
+        });
+      }
     }
   }
 
-  private async processPerikananData(tahunId: string, rows: ImportDataRowDto[], skenario: string) {
-    const perikananData: any = { skenario };
+  private async processPerikananData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    const perikananData: any = {};
     
     for (const row of rows) {
       switch (row.parameter) {
         case 'laju_perubahan_area':
-          perikananData.laju_perubahan_area = row.nilai;
+          perikananData.growth_rate = row.nilai;
           break;
         default:
-          throw new Error(`Parameter tidak dikenal untuk perikanan: ${row.parameter}`);
+          throw new Error(`Unknown parameter for fisheries: ${row.parameter}`);
       }
     }
 
-    await this.prisma.perikanan.upsert({
+    // Cari existing record atau buat baru
+    const existingRecord = await this.prisma.fisheries.findFirst({
       where: { 
-        tahunId_skenario: { tahunId, skenario }
-      },
-      update: perikananData,
-      create: { ...perikananData, tahunId }
+        yearId: tahunId,
+        scenarioId: skenario, // Will be null for histories data type
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      }
     });
+
+    if (existingRecord) {
+      await this.prisma.fisheries.update({
+        where: { id: existingRecord.id },
+        data: perikananData
+      });
+    } else {
+      await this.prisma.fisheries.create({
+        data: { 
+          ...perikananData, 
+          yearId: tahunId,
+          scenarioId: skenario, // Will be null for histories data type
+          cityId: kotaId,
+          dataTypeId: dataTypeId
+        }
+      });
+    }
   }
 }

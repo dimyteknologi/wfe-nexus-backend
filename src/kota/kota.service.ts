@@ -15,11 +15,11 @@ export class KotaService {
     }
 
     async create(dto: CreateKotaDto) {
-        const normalizeName = this.normalizeName(dto.nama);
+        const normalizeName = this.normalizeName(dto.name);
         try {
-            return await this.prisma.kota.create({
+            return await this.prisma.cities.create({
                 data: {
-                nama: normalizeName,
+                name: normalizeName,
                 },
             });
         } catch (error) {
@@ -30,8 +30,8 @@ export class KotaService {
 
     async findAll() {
         try {
-            return await this.prisma.kota.findMany({
-                orderBy: { nama: 'asc'}
+            return await this.prisma.cities.findMany({
+                orderBy: { name: 'asc'}
             });
         } catch (error) {
             this.logger.error(`Failed to fetch kota list: ${error.message}`);
@@ -40,7 +40,7 @@ export class KotaService {
     }
 
     async findOne(id: string) {
-        const kota = await this.prisma.kota.findUnique({
+        const kota = await this.prisma.cities.findUnique({
             where: { id },
         });
         if (!kota) {
@@ -52,12 +52,12 @@ export class KotaService {
     async update(id: string, dto: UpdateKotaDto) {
         await this.findOne(id);
 
-        const dataToUpdate: { nama?: string } = {};
-        if (dto.nama) {
-            dataToUpdate.nama = this.normalizeName(dto.nama)
+        const dataToUpdate: { name?: string } = {};
+        if (dto.name) {
+            dataToUpdate.name = this.normalizeName(dto.name)
         }
         try {
-            return await this.prisma.kota.update({
+            return await this.prisma.cities.update({
                 where: { id },
                 data: dataToUpdate
             })
@@ -70,7 +70,7 @@ export class KotaService {
     async remove(id: string) {
         await this.findOne(id);
         try {
-            await this.prisma.kota.delete({
+            await this.prisma.cities.delete({
                 where: { id },
             });
             return { message: `Kota widh Id ${id} has been successfully deleted.`}

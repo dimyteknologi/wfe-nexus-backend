@@ -4,9 +4,9 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class CreateKotaDto {
   @ApiProperty({
     example: 'Bandung',
-    description: 'The name of the city (kota)',
+    description: 'The name of the city',
   })
   @IsString()
   @IsNotEmpty()
-  nama: string;
+  name: string;
 }

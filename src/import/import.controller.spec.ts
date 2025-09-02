@@ -51,7 +51,7 @@ describe('ImportController', () => {
         imported: 1,
         failed: 0,
         errors: [],
-        message: 'Semua data berhasil diimport',
+        message: 'All data imported successfully',
       };
 
       jest.spyOn(service, 'importFromCsv').mockResolvedValue(mockResult);
@@ -65,7 +65,7 @@ describe('ImportController', () => {
     it('should throw error when file is missing', async () => {
       await expect(
         controller.importCsv(undefined as any, 'kota-id', 'baseline', { user: { userId: 'user-id' } })
-      ).rejects.toThrow('File tidak ditemukan');
+      ).rejects.toThrow('File not found');
     });
 
     it('should throw error when kotaId is missing', async () => {
@@ -76,7 +76,7 @@ describe('ImportController', () => {
 
       await expect(
         controller.importCsv(mockFile, '', 'baseline', { user: { userId: 'user-id' } })
-      ).rejects.toThrow('Parameter kotaId wajib diisi');
+      ).rejects.toThrow('Parameter kotaId is required');
     });
 
     it('should throw error when file is not CSV', async () => {
@@ -87,7 +87,7 @@ describe('ImportController', () => {
 
       await expect(
         controller.importCsv(mockFile, 'kota-id', 'baseline', { user: { userId: 'user-id' } })
-      ).rejects.toThrow('File harus berformat .csv');
+      ).rejects.toThrow('File must be in .csv format');
     });
   });
 });
