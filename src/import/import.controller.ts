@@ -5,11 +5,10 @@ import {
   UploadedFile, 
   BadRequestException, 
   UseGuards,
-  Req,
-  Query
+  Req
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiOperation, ApiResponse, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { ImportService } from './import.service';
 import { ImportResultDto } from './dto/import-data.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -68,7 +67,7 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ 
     summary: 'Import data from CSV file',
-    description: 'Upload CSV file with header format: year, category, parameter, value. Supported categories: population, gdrp, agriculture, livestock, fisheries'
+    description: 'Upload CSV file with header format: year, category, parameter, value. Supported categories: population, gdrp, agriculture, livestock, fisheries. The data will be imported for the city associated with the authenticated user.'
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -83,18 +82,6 @@ export class ImportController {
         }
       }
     }
-  })
-  @ApiQuery({ 
-    name: 'kotaId', 
-    required: true, 
-    description: 'Target city ID for data import',
-    type: 'string'
-  })
-  @ApiQuery({ 
-    name: 'skenario', 
-    required: false, 
-    description: 'Data scenario (default: baseline)',
-    type: 'string'
   })
   @ApiResponse({ 
     status: 200, 
@@ -111,21 +98,18 @@ export class ImportController {
   })
   async importCsv(
     @UploadedFile() file: Express.Multer.File,
-    @Query('kotaId') kotaId: string,
-    @Query('skenario') skenario: string = 'baseline',
     @Req() req: any
   ): Promise<ImportResultDto> {
     if (!file) {
       throw new BadRequestException('File not found');
     }
 
-    if (!kotaId) {
-      throw new BadRequestException('Parameter kotaId is required');
-    }
-
     if (!file.originalname.toLowerCase().endsWith('.csv')) {
       throw new BadRequestException('File must be in .csv format');
     }
+
+    const kotaId = req.user.cityId;
+    const skenario = 'baseline'; // Default scenario
 
     return this.importService.importFromCsv(file, kotaId, skenario);
   }

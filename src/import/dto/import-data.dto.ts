@@ -61,4 +61,29 @@ export class ImportResultDto {
     example: 'Data imported successfully'
   })
   message: string;
+
+  @ApiProperty({
+    description: 'Formatted imported data for visualization',
+    example: {
+      'get-population': {
+        data: {
+          label: 'populasi',
+          unit: 'orang',
+          years: [2020, 2021, 2022],
+          parameters: [
+            {
+              name: 'laki-laki',
+              values: [150000, 155000, 160000]
+            },
+            {
+              name: 'perempuan',
+              values: [145000, 150000, 155000]
+            }
+          ]
+        }
+      }
+    }
+  })
+  @IsOptional()
+  data?: any;
 }

@@ -141,7 +141,8 @@ export class ImportService {
         imported,
         failed,
         errors,
-        message: failed === 0 ? 'All data imported successfully' : `${imported} data imported successfully, ${failed} data failed`
+        message: failed === 0 ? 'All data imported successfully' : `${imported} data imported successfully, ${failed} data failed`,
+        data: await this.getFormattedData(kotaId, historiesDataType.id)
       };
 
     } catch (error) {
@@ -474,5 +475,243 @@ export class ImportService {
         data: createData
       });
     }
+  }
+
+  async getFormattedData(kotaId: string, dataTypeId?: string): Promise<any> {
+    // Default to histories data type if not specified
+    let targetDataType = dataTypeId;
+    if (!targetDataType) {
+      const historiesDataType = await this.prisma.dataType.findUnique({
+        where: { name: 'histories' }
+      });
+      if (!historiesDataType) {
+        throw new BadRequestException('Data type "histories" not found.');
+      }
+      targetDataType = historiesDataType.id;
+    }
+
+    // Get all years with data
+    const years = await this.prisma.years.findMany({
+      orderBy: { year: 'asc' }
+    });
+
+    const result = {};
+
+    // Get population data
+    const populationData = await this.prisma.population.findMany({
+      where: {
+        cityId: kotaId,
+        dataTypeId: targetDataType,
+        scenarioId: null // For histories data type
+      },
+      include: {
+        year: true
+      },
+      orderBy: {
+        year: { year: 'asc' }
+      }
+    });
+
+    if (populationData.length > 0) {
+      const populationYears = populationData.map(d => d.year.year);
+      result['get-population'] = {
+        data: {
+          label: 'populasi',
+          unit: 'orang',
+          years: populationYears,
+          parameters: [
+            {
+              name: 'laki-laki',
+              values: populationData.map(d => d.male)
+            },
+            {
+              name: 'perempuan',
+              values: populationData.map(d => d.female)
+            }
+          ]
+        }
+      };
+    }
+
+    // Get GDRP data
+    const gdpData = await this.prisma.gDRP.findMany({
+      where: {
+        cityId: kotaId,
+        dataTypeId: targetDataType,
+        scenarioId: null // For histories data type
+      },
+      include: {
+        year: true
+      },
+      orderBy: [
+        { year: { year: 'asc' } },
+        { sector: 'asc' }
+      ]
+    });
+
+    if (gdpData.length > 0) {
+      const gdpYears = [...new Set(gdpData.map(d => d.year.year))].sort();
+      const sectors = [...new Set(gdpData.map(d => d.sector))];
+      
+      const sectorNameMapping = {
+        'pertanian_kehutanan_perikanan': 'A.Pertanian, Kehutanan, dan Perikanan',
+        'pertambangan_penggalian': 'B.Pertambangan dan Penggalian',
+        'industri_pengolahan': 'C.Industri Pengolahan',
+        'pengadaan_listrik_gas': 'D.Pengadaan Listrik dan Gas',
+        'pengadaan_air_pengelolaan_sampah': 'E.Pengadaan Air, Pengelolaan Sampah, Limbah dan Daur Ulang',
+        'konstruksi': 'F.Konstruksi',
+        'perdagangan_reparasi_mobil_motor': 'G.Perdagangan Besar dan Eceran; Reparasi Mobil dan Sepeda Motor',
+        'transportasi_pergudangan': 'H.Transportasi dan Pergudangan',
+        'penyediaan_akomodasi_makan_minum': 'I.Penyediaan Akomodasi dan Makan Minum',
+        'informasi_komunikasi': 'J.Informasi dan Komunikasi',
+        'jasa_keuangan_asuransi': 'K.Jasa Keuangan dan Asuransi',
+        'real_estate': 'L.Real Estate',
+        'jasa_perusahaan': 'M,N.Jasa Perusahaan',
+        'administrasi_pemerintahan_jaminan_sosial': 'O.Administrasi Pemerintahan, Pertahanan dan Jaminan Sosial Wajib',
+        'jasa_pendidikan': 'P.Jasa Pendidikan',
+        'jasa_kesehatan_kegiatan_sosial': 'Q.Jasa Kesehatan dan Kegiatan Sosial',
+        'jasa_lainnya': 'R,S,T,U.Jasa lainnya',
+        'produk_domestik_regional_bruto': 'Produk Domestik Regional Bruto',
+        'pdrb_tanpa_migas': 'PDRB Tanpa Migas',
+        'pdrb_non_pemerintahan': 'Produk Domestik Regional Bruto Non Pemerintahan'
+      };
+
+      const parameters = sectors.map(sector => {
+        const sectorData = gdpData.filter(d => d.sector === sector);
+        const values = gdpYears.map(year => {
+          const yearData = sectorData.find(d => d.year.year === year);
+          return yearData ? yearData.value : null;
+        });
+        
+        return {
+          name: sectorNameMapping[sector] || sector,
+          values: values
+        };
+      });
+
+      result['get-gdp'] = {
+        data: {
+          label: 'PDRB',
+          unit: 'jutaan rupiah',
+          years: gdpYears,
+          parameters: parameters
+        }
+      };
+    }
+
+    // Get agriculture data
+    const agricultureData = await this.prisma.agriculture.findMany({
+      where: {
+        cityId: kotaId,
+        dataTypeId: targetDataType,
+        scenarioId: null // For histories data type
+      },
+      include: {
+        year: true
+      },
+      orderBy: {
+        year: { year: 'asc' }
+      }
+    });
+
+    if (agricultureData.length > 0) {
+      const agricultureYears = agricultureData.map(d => d.year.year);
+      result['get-pertanian'] = {
+        data: {
+          label: 'pertanian_luas',
+          unit: 'ha/tahun',
+          years: agricultureYears,
+          parameters: [
+            {
+              name: 'Lahan Panen Padi',
+              values: agricultureData.map(d => d.rice_cultivation_area)
+            }
+          ]
+        }
+      };
+    }
+
+    // Get livestock data
+    const livestockData = await this.prisma.livestock.findMany({
+      where: {
+        cityId: kotaId,
+        dataTypeId: targetDataType,
+        scenarioId: null // For histories data type
+      },
+      include: {
+        year: true
+      },
+      orderBy: [
+        { year: { year: 'asc' } },
+        { livestock_type: 'asc' }
+      ]
+    });
+
+    if (livestockData.length > 0) {
+      const livestockYears = [...new Set(livestockData.map(d => d.year.year))].sort();
+      const livestockTypes = [...new Set(livestockData.map(d => d.livestock_type))];
+      
+      const livestockNameMapping = {
+        'sapi': 'ternak sapi',
+        'kambing': 'ternak kambing',
+        'ayam': 'ternak ayam'
+      };
+
+      const parameters = livestockTypes.map(type => {
+        const typeData = livestockData.filter(d => d.livestock_type === type);
+        const values = livestockYears.map(year => {
+          const yearData = typeData.find(d => d.year.year === year);
+          return yearData ? yearData.change_rate : null;
+        });
+        
+        return {
+          name: livestockNameMapping[type] || type,
+          values: values
+        };
+      });
+
+      result['get-peternakan'] = {
+        data: {
+          label: 'peternakan_laju_perubahan',
+          unit: '1/tahun',
+          years: livestockYears,
+          parameters: parameters
+        }
+      };
+    }
+
+    // Get fisheries data
+    const fisheriesData = await this.prisma.fisheries.findMany({
+      where: {
+        cityId: kotaId,
+        dataTypeId: targetDataType,
+        scenarioId: null // For histories data type
+      },
+      include: {
+        year: true
+      },
+      orderBy: {
+        year: { year: 'asc' }
+      }
+    });
+
+    if (fisheriesData.length > 0) {
+      const fisheriesYears = fisheriesData.map(d => d.year.year);
+      result['get-perikanan'] = {
+        data: {
+          label: 'area_perikanan_laju_perubahan',
+          unit: '1/tahun',
+          years: fisheriesYears,
+          parameters: [
+            {
+              name: 'area perikanan',
+              values: fisheriesData.map(d => d.growth_rate)
+            }
+          ]
+        }
+      };
+    }
+
+    return result;
   }
 }
