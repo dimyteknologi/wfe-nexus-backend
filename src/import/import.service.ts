@@ -126,7 +126,9 @@ export class ImportService {
         const tahunNum = parseInt(tahun);
 
         try {
-          await this.processDataGroup(kotaId, tahunNum, kategori, rows, skenario, historiesDataType.id);
+          // For histories data type, always use null scenario
+          const scenarioForHistories = null;
+          await this.processDataGroup(kotaId, tahunNum, kategori, rows, scenarioForHistories, historiesDataType.id);
           imported += rows.length;
         } catch (error) {
           errors.push(`Error processing group ${groupKey}: ${error.message}`);
@@ -183,6 +185,7 @@ export class ImportService {
   private async processPopulasiData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
     const populasiData: any = {};
     
+    // Process all rows to build complete population data
     for (const row of rows) {
       switch (row.parameter) {
         case 'laki_laki':
@@ -201,14 +204,22 @@ export class ImportService {
       populasiData.total = populasiData.male + populasiData.female;
     }
 
-    // Cari existing record atau buat baru
+    // Find existing record or create new one
+    const whereCondition: any = { 
+      yearId: tahunId,
+      cityId: kotaId,
+      dataTypeId: dataTypeId
+    };
+    
+    // Handle scenarioId: use null for histories, or specific scenario ID
+    if (skenario === null) {
+      whereCondition.scenarioId = null;
+    } else {
+      whereCondition.scenarioId = skenario;
+    }
+    
     const existingRecord = await this.prisma.population.findFirst({
-      where: { 
-        yearId: tahunId,
-        scenarioId: skenario, // Will be null for histories data type
-        cityId: kotaId,
-        dataTypeId: dataTypeId
-      }
+      where: whereCondition
     });
 
     if (existingRecord) {
@@ -217,14 +228,20 @@ export class ImportService {
         data: populasiData
       });
     } else {
+      const createData: any = { 
+        ...populasiData, 
+        yearId: tahunId,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Only include scenarioId if it's not null
+      if (skenario !== null) {
+        createData.scenarioId = skenario;
+      }
+      
       await this.prisma.population.create({
-        data: { 
-          ...populasiData, 
-          yearId: tahunId,
-          scenarioId: skenario, // Will be null for histories data type
-          cityId: kotaId,
-          dataTypeId: dataTypeId
-        }
+        data: createData
       });
     }
   }
@@ -243,14 +260,22 @@ export class ImportService {
     for (const row of rows) {
       if (allowedPdrbParams.includes(row.parameter)) {
         // Check if record exists
+        const whereCondition: any = { 
+          yearId: tahunId,
+          sector: row.parameter,
+          cityId: kotaId,
+          dataTypeId: dataTypeId
+        };
+        
+        // Handle scenarioId: use null for histories, or specific scenario ID
+        if (skenario === null) {
+          whereCondition.scenarioId = null;
+        } else {
+          whereCondition.scenarioId = skenario;
+        }
+        
         const existingRecord = await this.prisma.gDRP.findFirst({
-          where: { 
-            yearId: tahunId,
-            scenarioId: skenario, // Will be null for histories data type
-            sector: row.parameter,
-            cityId: kotaId,
-            dataTypeId: dataTypeId
-          }
+          where: whereCondition
         });
 
         if (existingRecord) {
@@ -259,15 +284,21 @@ export class ImportService {
             data: { value: row.nilai }
           });
         } else {
+          const createData: any = {
+            yearId: tahunId,
+            cityId: kotaId,
+            dataTypeId: dataTypeId,
+            sector: row.parameter,
+            value: row.nilai
+          };
+          
+          // Only include scenarioId if it's not null
+          if (skenario !== null) {
+            createData.scenarioId = skenario;
+          }
+          
           await this.prisma.gDRP.create({
-            data: {
-              yearId: tahunId,
-              scenarioId: skenario, // Will be null for histories data type
-              cityId: kotaId,
-              dataTypeId: dataTypeId,
-              sector: row.parameter,
-              value: row.nilai
-            }
+            data: createData
           });
         }
       } else {
@@ -290,13 +321,21 @@ export class ImportService {
     }
 
     // Cari existing record atau buat baru
+    const whereCondition: any = { 
+      yearId: tahunId,
+      cityId: kotaId,
+      dataTypeId: dataTypeId
+    };
+    
+    // Handle scenarioId: use null for histories, or specific scenario ID
+    if (skenario === null) {
+      whereCondition.scenarioId = null;
+    } else {
+      whereCondition.scenarioId = skenario;
+    }
+    
     const existingRecord = await this.prisma.agriculture.findFirst({
-      where: { 
-        yearId: tahunId,
-        scenarioId: skenario, // Will be null for histories data type
-        cityId: kotaId,
-        dataTypeId: dataTypeId
-      }
+      where: whereCondition
     });
 
     if (existingRecord) {
@@ -305,14 +344,20 @@ export class ImportService {
         data: pertanianData
       });
     } else {
+      const createData: any = { 
+        ...pertanianData, 
+        yearId: tahunId,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Only include scenarioId if it's not null
+      if (skenario !== null) {
+        createData.scenarioId = skenario;
+      }
+      
       await this.prisma.agriculture.create({
-        data: { 
-          ...pertanianData, 
-          yearId: tahunId,
-          scenarioId: skenario, // Will be null for histories data type
-          cityId: kotaId,
-          dataTypeId: dataTypeId
-        }
+        data: createData
       });
     }
   }
@@ -332,14 +377,22 @@ export class ImportService {
 
     for (const [jenisTerak, lajuPerubahan] of peternakanGroups) {
       // Cari existing record atau buat baru
+      const whereCondition: any = { 
+        yearId: tahunId,
+        livestock_type: jenisTerak,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Handle scenarioId: use null for histories, or specific scenario ID
+      if (skenario === null) {
+        whereCondition.scenarioId = null;
+      } else {
+        whereCondition.scenarioId = skenario;
+      }
+      
       const existingRecord = await this.prisma.livestock.findFirst({
-        where: { 
-          yearId: tahunId,
-          scenarioId: skenario, // Will be null for histories data type
-          livestock_type: jenisTerak,
-          cityId: kotaId,
-          dataTypeId: dataTypeId
-        }
+        where: whereCondition
       });
 
       if (existingRecord) {
@@ -348,15 +401,21 @@ export class ImportService {
           data: { change_rate: lajuPerubahan }
         });
       } else {
+        const createData: any = { 
+          yearId: tahunId,
+          cityId: kotaId,
+          dataTypeId: dataTypeId,
+          livestock_type: jenisTerak,
+          change_rate: lajuPerubahan
+        };
+        
+        // Only include scenarioId if it's not null
+        if (skenario !== null) {
+          createData.scenarioId = skenario;
+        }
+        
         await this.prisma.livestock.create({
-          data: { 
-            yearId: tahunId,
-            scenarioId: skenario, // Will be null for histories data type
-            cityId: kotaId,
-            dataTypeId: dataTypeId,
-            livestock_type: jenisTerak,
-            change_rate: lajuPerubahan
-          }
+          data: createData
         });
       }
     }
@@ -376,13 +435,21 @@ export class ImportService {
     }
 
     // Cari existing record atau buat baru
+    const whereCondition: any = { 
+      yearId: tahunId,
+      cityId: kotaId,
+      dataTypeId: dataTypeId
+    };
+    
+    // Handle scenarioId: use null for histories, or specific scenario ID
+    if (skenario === null) {
+      whereCondition.scenarioId = null;
+    } else {
+      whereCondition.scenarioId = skenario;
+    }
+    
     const existingRecord = await this.prisma.fisheries.findFirst({
-      where: { 
-        yearId: tahunId,
-        scenarioId: skenario, // Will be null for histories data type
-        cityId: kotaId,
-        dataTypeId: dataTypeId
-      }
+      where: whereCondition
     });
 
     if (existingRecord) {
@@ -391,14 +458,20 @@ export class ImportService {
         data: perikananData
       });
     } else {
+      const createData: any = { 
+        ...perikananData, 
+        yearId: tahunId,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Only include scenarioId if it's not null
+      if (skenario !== null) {
+        createData.scenarioId = skenario;
+      }
+      
       await this.prisma.fisheries.create({
-        data: { 
-          ...perikananData, 
-          yearId: tahunId,
-          scenarioId: skenario, // Will be null for histories data type
-          cityId: kotaId,
-          dataTypeId: dataTypeId
-        }
+        data: createData
       });
     }
   }
