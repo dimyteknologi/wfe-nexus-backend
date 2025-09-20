@@ -76,6 +76,15 @@ export class ImportService {
     const errors: string[] = [];
 
     try {
+      // Validate that the city exists
+      const city = await this.prisma.cities.findUnique({
+        where: { id: kotaId }
+      });
+
+      if (!city) {
+        throw new BadRequestException(`City with ID "${kotaId}" not found. Please ensure you are logged in with a valid user account.`);
+      }
+
       // Get the "histories" data type ID for imported data
       const historiesDataType = await this.prisma.dataType.findUnique({
         where: { name: 'histories' }
@@ -166,8 +175,8 @@ export class ImportService {
       case 'populasi':
         await this.processPopulasiData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
-      case 'pdrb':
-        await this.processPdrbData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
+      case 'economy':
+        await this.processEconomyData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       case 'pertanian':
         await this.processPertanianData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
@@ -175,8 +184,11 @@ export class ImportService {
       case 'peternakan':
         await this.processPeternakanData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
-      case 'perikanan':
-        await this.processPerikananData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
+      case 'assumption':
+        await this.processAssumptionData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
+        break;
+      case 'energy supply':
+        await this.processEnergySupplyData(tahunRecord.id, rows, skenario, kotaId, dataTypeId);
         break;
       default:
         throw new Error(`Unknown category: ${kategori}`);
@@ -189,11 +201,14 @@ export class ImportService {
     // Process all rows to build complete population data
     for (const row of rows) {
       switch (row.parameter) {
-        case 'laki_laki':
+        case 'laki-laki':
           populasiData.male = row.nilai;
           break;
         case 'perempuan':
           populasiData.female = row.nilai;
+          break;
+        case 'jumlah':
+          populasiData.total = row.nilai;
           break;
         default:
           throw new Error(`Unknown parameter for population: ${row.parameter}`);
@@ -244,6 +259,81 @@ export class ImportService {
       await this.prisma.population.create({
         data: createData
       });
+    }
+  }
+
+  private async processEconomyData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    const allowedEconomyParams = [
+      'a.pertanian, kehutanan, dan perikanan',
+      'b.pertambangan dan penggalian',
+      'c.industri pengolahan',
+      'd.pengadaan listrik dan gas',
+      'e.pengadaan air, pengelolaan sampah, limbah dan daur ulang',
+      'f.konstruksi',
+      'g.perdagangan besar dan eceran; reparasi mobil dan sepeda motor',
+      'h.transportasi dan pergudangan',
+      'i.penyediaan akomodasi dan makan minum',
+      'j.informasi dan komunikasi',
+      'k.jasa keuangan dan asuransi',
+      'l.real estate',
+      'm,n.jasa perusahaan',
+      'o.administrasi pemerintahan, pertahanan dan jaminan sosial wajib',
+      'p.jasa pendidikan',
+      'q.jasa kesehatan dan kegiatan sosial',
+      'r,s,t,u.jasa lainnya',
+      'produk domestik regional bruto',
+      'pdrb tanpa migas',
+      'produk domestik regional bruto non pemerintahan'
+    ];
+
+    // Create separate records for each sector
+    for (const row of rows) {
+      if (allowedEconomyParams.includes(row.parameter)) {
+        // Check if record exists
+        const whereCondition: any = { 
+          yearId: tahunId,
+          sector: row.parameter,
+          cityId: kotaId,
+          dataTypeId: dataTypeId
+        };
+        
+        // Handle scenarioId: use null for histories, or specific scenario ID
+        if (skenario === null) {
+          whereCondition.scenarioId = null;
+        } else {
+          whereCondition.scenarioId = skenario;
+        }
+        
+        const existingRecord = await this.prisma.gDRP.findFirst({
+          where: whereCondition
+        });
+
+        if (existingRecord) {
+          await this.prisma.gDRP.update({
+            where: { id: existingRecord.id },
+            data: { value: row.nilai }
+          });
+        } else {
+          const createData: any = {
+            yearId: tahunId,
+            cityId: kotaId,
+            dataTypeId: dataTypeId,
+            sector: row.parameter,
+            value: row.nilai
+          };
+          
+          // Only include scenarioId if it's not null
+          if (skenario !== null) {
+            createData.scenarioId = skenario;
+          }
+          
+          await this.prisma.gDRP.create({
+            data: createData
+          });
+        }
+      } else {
+        throw new Error(`Unknown parameter for Economy: ${row.parameter}`);
+      }
     }
   }
 
@@ -313,7 +403,7 @@ export class ImportService {
     
     for (const row of rows) {
       switch (row.parameter) {
-        case 'lahan_panen_padi':
+        case 'lahan panen padi [ha/tahun]':
           pertanianData.rice_cultivation_area = row.nilai;
           break;
         default:
@@ -364,23 +454,22 @@ export class ImportService {
   }
 
   private async processPeternakanData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
-    // Group by jenis_ternak
-    const peternakanGroups = new Map<string, number>();
+    // Map parameter to livestock type
+    const peternakanMapping = {
+      'laju perubahan ternak sapi [1/tahun]': 'sapi',
+      'laju perubahan ternak kambing [1/tahun]': 'kambing'
+    };
     
     for (const row of rows) {
-      const [jenisParam, jenisValue] = row.parameter.split('_');
-      if (jenisParam === 'laju' && jenisValue) {
-        peternakanGroups.set(jenisValue, row.nilai);
-      } else {
-        throw new Error(`Unknown parameter for livestock: ${row.parameter}. Expected format: laju_{livestock_type}`);
+      const livestockType = peternakanMapping[row.parameter];
+      if (!livestockType) {
+        throw new Error(`Unknown parameter for livestock: ${row.parameter}`);
       }
-    }
 
-    for (const [jenisTerak, lajuPerubahan] of peternakanGroups) {
       // Cari existing record atau buat baru
       const whereCondition: any = { 
         yearId: tahunId,
-        livestock_type: jenisTerak,
+        livestock_type: livestockType,
         cityId: kotaId,
         dataTypeId: dataTypeId
       };
@@ -399,15 +488,15 @@ export class ImportService {
       if (existingRecord) {
         await this.prisma.livestock.update({
           where: { id: existingRecord.id },
-          data: { change_rate: lajuPerubahan }
+          data: { change_rate: row.nilai }
         });
       } else {
         const createData: any = { 
           yearId: tahunId,
           cityId: kotaId,
           dataTypeId: dataTypeId,
-          livestock_type: jenisTerak,
-          change_rate: lajuPerubahan
+          livestock_type: livestockType,
+          change_rate: row.nilai
         };
         
         // Only include scenarioId if it's not null
@@ -474,6 +563,100 @@ export class ImportService {
       await this.prisma.fisheries.create({
         data: createData
       });
+    }
+  }
+
+  private async processAssumptionData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    for (const row of rows) {
+      // Check if record exists
+      const whereCondition: any = { 
+        yearId: tahunId,
+        parameter: row.parameter,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Handle scenarioId: use null for histories, or specific scenario ID
+      if (skenario === null) {
+        whereCondition.scenarioId = null;
+      } else {
+        whereCondition.scenarioId = skenario;
+      }
+      
+      const existingRecord = await this.prisma.assumption.findFirst({
+        where: whereCondition
+      });
+
+      if (existingRecord) {
+        await this.prisma.assumption.update({
+          where: { id: existingRecord.id },
+          data: { value: row.nilai }
+        });
+      } else {
+        const createData: any = {
+          yearId: tahunId,
+          cityId: kotaId,
+          dataTypeId: dataTypeId,
+          parameter: row.parameter,
+          value: row.nilai
+        };
+        
+        // Only include scenarioId if it's not null
+        if (skenario !== null) {
+          createData.scenarioId = skenario;
+        }
+        
+        await this.prisma.assumption.create({
+          data: createData
+        });
+      }
+    }
+  }
+
+  private async processEnergySupplyData(tahunId: string, rows: ImportDataRowDto[], skenario: string | null, kotaId: string, dataTypeId: string) {
+    for (const row of rows) {
+      // Check if record exists
+      const whereCondition: any = { 
+        yearId: tahunId,
+        parameter: row.parameter,
+        cityId: kotaId,
+        dataTypeId: dataTypeId
+      };
+      
+      // Handle scenarioId: use null for histories, or specific scenario ID
+      if (skenario === null) {
+        whereCondition.scenarioId = null;
+      } else {
+        whereCondition.scenarioId = skenario;
+      }
+      
+      const existingRecord = await this.prisma.energySupply.findFirst({
+        where: whereCondition
+      });
+
+      if (existingRecord) {
+        await this.prisma.energySupply.update({
+          where: { id: existingRecord.id },
+          data: { value: row.nilai }
+        });
+      } else {
+        const createData: any = {
+          yearId: tahunId,
+          cityId: kotaId,
+          dataTypeId: dataTypeId,
+          parameter: row.parameter,
+          value: row.nilai
+        };
+        
+        // Only include scenarioId if it's not null
+        if (skenario !== null) {
+          createData.scenarioId = skenario;
+        }
+        
+        await this.prisma.energySupply.create({
+          data: createData
+        });
+      }
     }
   }
 

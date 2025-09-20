@@ -73,6 +73,8 @@ model Cities {
   agriculture Agriculture[]
   livestock   Livestock[]
   fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
 
   @@map("cities")
 }
@@ -85,6 +87,8 @@ model Years {
   agriculture Agriculture[]
   livestock   Livestock[]
   fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
 
   @@map("year")
 }
@@ -99,6 +103,8 @@ model Scenario {
   agriculture   Agriculture[]
   livestock     Livestock[]
   fisheries     Fisheries[]
+  assumptions   Assumption[]
+  energySupply  EnergySupply[]
   configurations ScenarioConfiguration[]
   createdAt     DateTime                @default(now())
   updatedAt     DateTime?
@@ -113,7 +119,7 @@ model ScenarioConfiguration {
   scenarioId String
   scenario   Scenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
   name       String
-  value      String
+  value      Float
   createdAt  DateTime  @default(now())
   updatedAt  DateTime?
 
@@ -128,6 +134,8 @@ model DataType {
   agriculture Agriculture[]
   livestock   Livestock[]
   fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
 
   @@map("data_type")
 }
@@ -219,4 +227,40 @@ model Fisheries {
 
   @@unique([yearId, cityId, dataTypeId, scenarioId])
   @@map("fisheries")
+}
+
+model Assumption {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  parameter             String
+  value                 Float
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, parameter])
+  @@map("assumption")
+}
+
+model EnergySupply {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  parameter             String
+  value                 Float
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, parameter])
+  @@map("energy_supply")
 }

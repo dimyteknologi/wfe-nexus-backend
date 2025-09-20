@@ -13,21 +13,46 @@ export interface CsvValidationResult {
 
 export class CsvValidator {
   private static readonly REQUIRED_HEADERS = ['tahun', 'kategori', 'parameter', 'nilai'];
-  private static readonly ALLOWED_CATEGORIES = ['populasi', 'pdrb', 'pertanian', 'peternakan', 'perikanan'];
+  private static readonly ALLOWED_CATEGORIES = [
+    'assumption', 'economy', 'populasi', 'pertanian', 'peternakan', 'energy supply'
+  ];
   
   private static readonly CATEGORY_PARAMETERS = {
-    populasi: ['laki_laki', 'perempuan'],
-    pdrb: [
-      'pertanian_kehutanan_perikanan', 'pertambangan_penggalian', 'industri_pengolahan',
-      'pengadaan_listrik_gas', 'pengadaan_air_pengelolaan_sampah', 'konstruksi',
-      'perdagangan_reparasi_mobil_motor', 'transportasi_pergudangan', 'penyediaan_akomodasi_makan_minum',
-      'informasi_komunikasi', 'jasa_keuangan_asuransi', 'real_estate', 'jasa_perusahaan',
-      'administrasi_pemerintahan_jaminan_sosial', 'jasa_pendidikan', 'jasa_kesehatan_kegiatan_sosial',
-      'jasa_lainnya', 'produk_domestik_regional_bruto', 'pdrb_tanpa_migas', 'pdrb_non_pemerintahan'
+    assumption: [
+      'falkenmark standard: no stress',
+      'falkenmark standard: stress', 
+      'falkenmark standard: scarcity',
+      'electricity per capita national [kwh/cap/year]'
     ],
-    pertanian: ['lahan_panen_padi'],
-    peternakan: [], // Dynamic parameters like laju_{jenis_ternak}
-    perikanan: ['laju_perubahan_area']
+    economy: [
+      'a.pertanian, kehutanan, dan perikanan',
+      'b.pertambangan dan penggalian',
+      'c.industri pengolahan',
+      'd.pengadaan listrik dan gas',
+      'e.pengadaan air, pengelolaan sampah, limbah dan daur ulang',
+      'f.konstruksi',
+      'g.perdagangan besar dan eceran; reparasi mobil dan sepeda motor',
+      'h.transportasi dan pergudangan',
+      'i.penyediaan akomodasi dan makan minum',
+      'j.informasi dan komunikasi',
+      'k.jasa keuangan dan asuransi',
+      'l.real estate',
+      'm,n.jasa perusahaan',
+      'o.administrasi pemerintahan, pertahanan dan jaminan sosial wajib',
+      'p.jasa pendidikan',
+      'q.jasa kesehatan dan kegiatan sosial',
+      'r,s,t,u.jasa lainnya',
+      'produk domestik regional bruto',
+      'pdrb tanpa migas',
+      'produk domestik regional bruto non pemerintahan'
+    ],
+    populasi: ['laki-laki', 'perempuan', 'jumlah'],
+    pertanian: ['lahan panen padi [ha/tahun]'],
+    peternakan: [
+      'laju perubahan ternak sapi [1/tahun]',
+      'laju perubahan ternak kambing [1/tahun]'
+    ],
+    'energy supply': ['availability factor']
   };
 
   static validateHeaders(headers: string[]): boolean {
@@ -84,17 +109,7 @@ export class CsvValidator {
       });
     } else if (cleanKategori && this.CATEGORY_PARAMETERS[cleanKategori]) {
       const allowedParams = this.CATEGORY_PARAMETERS[cleanKategori];
-      if (cleanKategori === 'peternakan') {
-        // Special validation for livestock (laju_{jenis_ternak})
-        if (!cleanParameter.startsWith('laju_') || cleanParameter === 'laju_') {
-          errors.push({
-            row: rowNumber,
-            field: 'parameter',
-            value: parameter,
-            message: 'Livestock parameter must be in format: laju_{jenis_ternak}'
-          });
-        }
-      } else if (allowedParams.length > 0 && !allowedParams.includes(cleanParameter)) {
+      if (allowedParams.length > 0 && !allowedParams.includes(cleanParameter)) {
         errors.push({
           row: rowNumber,
           field: 'parameter',
@@ -105,7 +120,8 @@ export class CsvValidator {
     }
 
     // Validate value
-    const nilaiNum = parseFloat(nilai);
+    const cleanNilai = nilai?.toString().replace(/[\s,]/g, ''); // Remove spaces and commas
+    const nilaiNum = parseFloat(cleanNilai);
     if (isNaN(nilaiNum)) {
       errors.push({
         row: rowNumber,
@@ -151,11 +167,12 @@ export class CsvValidator {
       const rowErrors = this.validateRow(row, i + 1);
       
       if (rowErrors.length === 0) {
+        const cleanNilai = row[3]?.toString().replace(/[\s,]/g, ''); // Remove spaces and commas
         validRows.push({
           tahun: parseInt(row[0]),
           kategori: row[1]?.toString().toLowerCase().trim(),
           parameter: row[2]?.toString().toLowerCase().trim(),
-          nilai: parseFloat(row[3])
+          nilai: parseFloat(cleanNilai)
         });
       } else {
         errors.push(...rowErrors);

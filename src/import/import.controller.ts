@@ -111,6 +111,10 @@ export class ImportController {
     const kotaId = req.user.cityId;
     const skenario = 'baseline'; // Default scenario
 
+    if (!kotaId) {
+      throw new BadRequestException('User cityId not found. Please ensure you are logged in with a valid user account.');
+    }
+
     return this.importService.importFromCsv(file, kotaId, skenario);
   }
 }
