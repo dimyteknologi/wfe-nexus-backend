@@ -11,11 +11,12 @@ import { KotaModule } from './kota/kota.module';
 import { TahunModule } from './tahun/tahun.module';
 import { ImportModule } from './import/import.module';
 import { InstitusiModule } from './institusi/institusi.module';
+import { ScenarioModule } from './scenario/scenario.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule],
+    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule, ScenarioModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

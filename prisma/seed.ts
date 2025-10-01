@@ -14,6 +14,7 @@ async function main() {
       { permissionCode: 'manage:institusi',  permissionName: 'Manage Institusi' },
       { permissionCode: 'manage:import',  permissionName: 'Manage Import' },
       { permissionCode: 'manage:data',  permissionName: 'Manage Data' },
+      { permissionCode: 'read:data',  permissionName: 'Read Data' },
     ],
     skipDuplicates: true,
   });

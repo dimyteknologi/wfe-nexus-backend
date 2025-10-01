@@ -68,6 +68,7 @@ model Cities {
   id          String  @id @default(uuid())
   name        String  @unique
   users       User[]
+  scenarios   Scenario[]
   gdrp        GDRP[]
   population  Population[]
   agriculture Agriculture[]
@@ -98,6 +99,8 @@ model Scenario {
   name          String
   userId        String
   user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cityId        String
+  city          Cities                  @relation(fields: [cityId], references: [id])
   gdrp          GDRP[]
   population    Population[]
   agriculture   Agriculture[]
@@ -118,11 +121,16 @@ model ScenarioConfiguration {
   id         String    @id @default(uuid())
   scenarioId String
   scenario   Scenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
-  name       String
-  value      Float
+  category  String
+  subType   String
+  period    String
+  value     Float
   createdAt  DateTime  @default(now())
   updatedAt  DateTime?
 
+  @@index([category])
+  @@index([subType])
+  @@index([period])
   @@map("scenario_configuration")
 }
 
