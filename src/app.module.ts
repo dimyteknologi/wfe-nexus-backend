@@ -12,11 +12,12 @@ import { TahunModule } from './tahun/tahun.module';
 import { ImportModule } from './import/import.module';
 import { InstitusiModule } from './institusi/institusi.module';
 import { ScenarioModule } from './scenario/scenario.module';
+import { BaseDataModule } from './base-data/base-data.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({isGlobal: true}),
-    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule, ScenarioModule],
+    AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule, ScenarioModule, BaseDataModule],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
