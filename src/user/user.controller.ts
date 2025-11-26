@@ -7,11 +7,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
-@UseGuards( JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth('JWT-auth')
 @Controller('user')
 export class UserController {
-    constructor(private readonly user: UserService) {}
+    constructor(private readonly user: UserService) { }
 
     @Post()
     @Permissions('manage:user')
@@ -50,8 +50,15 @@ export class UserController {
     @Permissions('manage:user')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Delete a user (soft delete)' })
-    remove(@Param('id') id:string, @Req() req) {
+    remove(@Param('id') id: string, @Req() req) {
         const currentUserId = req.user.userId
         return this.user.remove(id, currentUserId)
+    }
+
+    @Get('total')
+    @Permissions('manage:user')
+    @ApiOperation({ summary: 'Get total users' })
+    count() {
+        return this.user.count()
     }
 }

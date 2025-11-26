@@ -1,17 +1,17 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
-  UseGuards, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
   Req,
   HttpCode,
   HttpStatus
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { InstitusiService } from './institusi.service';
 import { CreateInstitusiDto } from './dto/create-institusi.dto';
 import { UpdateInstitusiDto } from './dto/update-institusi.dto';
@@ -24,10 +24,11 @@ import { Permissions } from 'src/auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('institusi')
 export class InstitusiController {
-  constructor(private readonly institusiService: InstitusiService) {}
+  constructor(private readonly institusiService: InstitusiService) { }
 
   @Post()
   @Permissions('manage:institusi')
+  @ApiOperation({ summary: 'Create a new institution' })
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createInstitusiDto: CreateInstitusiDto, @Req() req) {
     const currentUserId = req.user.userId;
@@ -36,18 +37,21 @@ export class InstitusiController {
 
   @Get()
   @Permissions('read:institusi')
+  @ApiOperation({ summary: 'Get all institutions' })
   findAll() {
     return this.institusiService.findAll();
   }
 
   @Get(':id')
   @Permissions('read:institusi')
+  @ApiOperation({ summary: 'Get a single institution by ID' })
   findOne(@Param('id') id: string) {
     return this.institusiService.findOne(id);
   }
 
   @Patch(':id')
   @Permissions('manage:institusi')
+  @ApiOperation({ summary: 'Update an institution' })
   update(@Param('id') id: string, @Body() updateInstitusiDto: UpdateInstitusiDto, @Req() req) {
     const currentUserId = req.user.userId;
     return this.institusiService.update(id, updateInstitusiDto, currentUserId);
@@ -55,9 +59,17 @@ export class InstitusiController {
 
   @Delete(':id')
   @Permissions('manage:institusi')
+  @ApiOperation({ summary: 'Delete an institution' })
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string, @Req() req) {
     const currentUserId = req.user.userId;
     return this.institusiService.remove(id, currentUserId);
+  }
+
+  @Get('total')
+  @Permissions('manage:institusi')
+  @ApiOperation({ summary: 'Get total institutions' })
+  count() {
+    return this.institusiService.count();
   }
 }
