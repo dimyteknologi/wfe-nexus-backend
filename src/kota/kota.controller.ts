@@ -12,7 +12,7 @@ import { UpdateKotaDto } from './dto/update-kota.dto';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('kota')
 export class KotaController {
-    constructor(private readonly kotaService: KotaService) {}
+    constructor(private readonly kotaService: KotaService) { }
 
     @Post()
     @Permissions('manage:kota')
@@ -48,5 +48,13 @@ export class KotaController {
     @ApiOperation({ summary: 'Delete a city' })
     remove(@Param('id') id: string) {
         return this.kotaService.remove(id);
+    }
+
+    @Get('total')
+    @Permissions('manage:kota')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Get total cities' })
+    count() {
+        return this.kotaService.count();
     }
 }

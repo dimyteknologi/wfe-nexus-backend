@@ -6,7 +6,7 @@ import { UpdateKotaDto } from './dto/update-kota.dto';
 @Injectable()
 export class KotaService {
     private readonly logger = new Logger(KotaService.name);
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) { }
 
     private normalizeName(name: string): string {
         if (!name) return name;
@@ -19,7 +19,7 @@ export class KotaService {
         try {
             return await this.prisma.cities.create({
                 data: {
-                name: normalizeName,
+                    name: normalizeName,
                 },
             });
         } catch (error) {
@@ -31,7 +31,7 @@ export class KotaService {
     async findAll() {
         try {
             return await this.prisma.cities.findMany({
-                orderBy: { name: 'asc'}
+                orderBy: { name: 'asc' }
             });
         } catch (error) {
             this.logger.error(`Failed to fetch kota list: ${error.message}`);
@@ -73,10 +73,20 @@ export class KotaService {
             await this.prisma.cities.delete({
                 where: { id },
             });
-            return { message: `Kota widh Id ${id} has been successfully deleted.`}
+            return { message: `Kota widh Id ${id} has been successfully deleted.` }
         } catch (error) {
             this.logger.error(`Failed to delete kota with ID ${id}: ${error.message}`);
             throw new InternalServerErrorException('Failed to delete kota');
+        }
+    }
+
+    async count() {
+        try {
+            const total = await this.prisma.cities.count();
+            return { total };
+        } catch (error) {
+            this.logger.error(`Count kota failed: ${error.message}`);
+            throw new InternalServerErrorException('Failed to count kota');
         }
     }
 }

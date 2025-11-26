@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateInstitusiDto } from './dto/create-institusi.dto';
 import { UpdateInstitusiDto } from './dto/update-institusi.dto';
 
 @Injectable()
 export class InstitusiService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createInstitusiDto: CreateInstitusiDto, currentUserId: string) {
     try {
@@ -154,5 +154,16 @@ export class InstitusiService {
       message: 'Institution deleted successfully',
       institusi,
     };
+  }
+
+  async count() {
+    try {
+      const total = await this.prisma.institution.count({
+        where: { deletedAt: null },
+      });
+      return { total };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to count institution');
+    }
   }
 }
