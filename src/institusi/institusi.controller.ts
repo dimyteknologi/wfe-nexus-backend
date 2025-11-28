@@ -11,10 +11,12 @@ import {
   HttpCode,
   HttpStatus
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { InstitusiService } from './institusi.service';
 import { CreateInstitusiDto } from './dto/create-institusi.dto';
 import { UpdateInstitusiDto } from './dto/update-institusi.dto';
+import { InstitusiEntity, InstitusiWithUsersEntity } from './entities/institusi.entity';
+import { DeleteInstitusiResponseDto, CountInstitusiResponseDto } from './dto/institusi-response.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { Permissions } from 'src/auth/decorators/roles.decorator';
@@ -28,8 +30,12 @@ export class InstitusiController {
 
   @Post()
   @Permissions('manage:institusi')
-  @ApiOperation({ summary: 'Create a new institution' })
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a new institution' })
+  @ApiBody({ type: CreateInstitusiDto })
+  @ApiResponse({ status: 201, description: 'Institution created successfully', type: InstitusiEntity })
+  @ApiResponse({ status: 400, description: 'Institution name already exists' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   create(@Body() createInstitusiDto: CreateInstitusiDto, @Req() req) {
     const currentUserId = req.user.userId;
     return this.institusiService.create(createInstitusiDto, currentUserId);
@@ -38,13 +44,17 @@ export class InstitusiController {
   @Get()
   @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get all institutions' })
+  @ApiResponse({ status: 200, description: 'Return all institutions', type: [InstitusiEntity] })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   findAll() {
     return this.institusiService.findAll();
   }
 
   @Get('total')
-  @Permissions('manage:institusi')
-  @ApiOperation({ summary: 'Get total institutions' })
+  @Permissions('read:institusi')
+  @ApiOperation({ summary: 'Get total institutions count' })
+  @ApiResponse({ status: 200, description: 'Return total count of institutions', type: CountInstitusiResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   count() {
     return this.institusiService.count();
   }
@@ -52,6 +62,9 @@ export class InstitusiController {
   @Get(':id')
   @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get a single institution by ID' })
+  @ApiResponse({ status: 200, description: 'Return the institution', type: InstitusiWithUsersEntity })
+  @ApiResponse({ status: 404, description: 'Institution not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   findOne(@Param('id') id: string) {
     return this.institusiService.findOne(id);
   }
@@ -59,6 +72,11 @@ export class InstitusiController {
   @Patch(':id')
   @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Update an institution' })
+  @ApiBody({ type: UpdateInstitusiDto })
+  @ApiResponse({ status: 200, description: 'Institution updated successfully', type: InstitusiEntity })
+  @ApiResponse({ status: 400, description: 'Institution name already exists' })
+  @ApiResponse({ status: 404, description: 'Institution not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   update(@Param('id') id: string, @Body() updateInstitusiDto: UpdateInstitusiDto, @Req() req) {
     const currentUserId = req.user.userId;
     return this.institusiService.update(id, updateInstitusiDto, currentUserId);
@@ -66,8 +84,12 @@ export class InstitusiController {
 
   @Delete(':id')
   @Permissions('manage:institusi')
-  @ApiOperation({ summary: 'Delete an institution' })
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete an institution' })
+  @ApiResponse({ status: 200, description: 'Institution deleted successfully', type: DeleteInstitusiResponseDto })
+  @ApiResponse({ status: 400, description: 'Cannot delete institution with active users' })
+  @ApiResponse({ status: 404, description: 'Institution not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   remove(@Param('id') id: string, @Req() req) {
     const currentUserId = req.user.userId;
     return this.institusiService.remove(id, currentUserId);

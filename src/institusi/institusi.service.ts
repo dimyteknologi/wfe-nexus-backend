@@ -29,18 +29,6 @@ export class InstitusiService {
       where: {
         deletedAt: null,
       },
-      include: {
-        users: {
-          where: {
-            deletedAt: null,
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
       orderBy: {
         name: 'asc',
       },

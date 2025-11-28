@@ -7,14 +7,15 @@ async function main() {
   await prisma.permission.createMany({
     data: [
       { permissionCode: 'read:dashboard', permissionName: 'Dashboard' },
-      { permissionCode: 'manage:roles', permissionName: 'Manage Roles' },
-      { permissionCode: 'manage:user', permissionName: 'Manage Users' },
-      { permissionCode: 'manage:kota', permissionName: 'Manage Kota' },
-      { permissionCode: 'manage:permissions', permissionName: 'Manage Permissions' },
-      { permissionCode: 'manage:institusi', permissionName: 'Manage Institusi' },
-      { permissionCode: 'manage:import', permissionName: 'Manage Import' },
-      { permissionCode: 'manage:data', permissionName: 'Manage Data' },
-      { permissionCode: 'read:data', permissionName: 'Read Data' },
+      { permissionCode: 'manage:roles',  permissionName: 'Manage Roles' },
+      { permissionCode: 'manage:user',  permissionName: 'Manage Users' },
+      { permissionCode: 'manage:kota',  permissionName: 'Manage Kota' },
+      { permissionCode: 'manage:permissions',  permissionName: 'Manage Permissions' },
+      { permissionCode: 'manage:institusi',  permissionName: 'Manage Institusi' },
+      { permissionCode: 'read:institusi',  permissionName: 'Read Institusi' },
+      { permissionCode: 'manage:import',  permissionName: 'Manage Import' },
+      { permissionCode: 'manage:data',  permissionName: 'Manage Data' },
+      { permissionCode: 'read:data',  permissionName: 'Read Data' },
     ],
     skipDuplicates: true,
   });
