@@ -36,14 +36,21 @@ export class InstitusiController {
   }
 
   @Get()
-  @Permissions('read:institusi')
+  @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get all institutions' })
   findAll() {
     return this.institusiService.findAll();
   }
 
+  @Get('total')
+  @Permissions('manage:institusi')
+  @ApiOperation({ summary: 'Get total institutions' })
+  count() {
+    return this.institusiService.count();
+  }
+
   @Get(':id')
-  @Permissions('read:institusi')
+  @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get a single institution by ID' })
   findOne(@Param('id') id: string) {
     return this.institusiService.findOne(id);
@@ -65,11 +72,5 @@ export class InstitusiController {
     const currentUserId = req.user.userId;
     return this.institusiService.remove(id, currentUserId);
   }
-
-  @Get('total')
-  @Permissions('manage:institusi')
-  @ApiOperation({ summary: 'Get total institutions' })
-  count() {
-    return this.institusiService.count();
-  }
 }
+

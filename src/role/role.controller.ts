@@ -11,10 +11,10 @@ import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 @ApiBearerAuth('JWT-auth')
 @Controller('role')
 export class RoleController {
-    constructor(private readonly role: RoleService) {}
+    constructor(private readonly role: RoleService) { }
 
     @Post()
-    @Permissions('manage:role')
+    @Permissions('manage:roles')
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Create a new role' })
     @ApiResponse({ status: 201, description: 'Role created successfully.' })
@@ -46,12 +46,12 @@ export class RoleController {
         @Body() dto: UpdateRoleDto,
         @Req() req,
     ) {
-    const currentUserId = req.user.userId;
+        const currentUserId = req.user.userId;
         return this.role.update(id, dto, currentUserId);
     }
 
     @Delete(':id')
-    @Permissions('delete:role')
+    @Permissions('manage:roles')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Delete a role (soft delete)' })
     async remove(@Param('id') id: string, @Req() req) {
