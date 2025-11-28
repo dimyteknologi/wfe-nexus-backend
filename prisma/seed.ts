@@ -12,6 +12,7 @@ async function main() {
       { permissionCode: 'manage:kota',  permissionName: 'Manage Kota' },
       { permissionCode: 'manage:permissions',  permissionName: 'Manage Permissions' },
       { permissionCode: 'manage:institusi',  permissionName: 'Manage Institusi' },
+      { permissionCode: 'read:institusi',  permissionName: 'Read Institusi' },
       { permissionCode: 'manage:import',  permissionName: 'Manage Import' },
       { permissionCode: 'manage:data',  permissionName: 'Manage Data' },
       { permissionCode: 'read:data',  permissionName: 'Read Data' },
