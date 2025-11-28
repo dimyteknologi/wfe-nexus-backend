@@ -42,7 +42,7 @@ export class InstitusiController {
   }
 
   @Get()
-  @Permissions('read:institusi')
+  @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get all institutions' })
   @ApiResponse({ status: 200, description: 'Return all institutions', type: [InstitusiEntity] })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
@@ -60,7 +60,7 @@ export class InstitusiController {
   }
 
   @Get(':id')
-  @Permissions('read:institusi')
+  @Permissions('manage:institusi')
   @ApiOperation({ summary: 'Get a single institution by ID' })
   @ApiResponse({ status: 200, description: 'Return the institution', type: InstitusiWithUsersEntity })
   @ApiResponse({ status: 404, description: 'Institution not found' })
@@ -95,3 +95,4 @@ export class InstitusiController {
     return this.institusiService.remove(id, currentUserId);
   }
 }
+

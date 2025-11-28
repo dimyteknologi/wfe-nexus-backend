@@ -59,10 +59,10 @@ async function main() {
 
   // Debug: check available models
   console.log('Available prisma models:', Object.keys(prisma).filter(key => !key.startsWith('$') && !key.startsWith('_')));
-  
+
   // Check if scenario model exists
   console.log('Has scenario model:', 'scenario' in prisma);
-  
+
   const defaultCity = await prisma.cities.upsert({
     where: { name: 'Kantor Pusat' },
     update: {},
