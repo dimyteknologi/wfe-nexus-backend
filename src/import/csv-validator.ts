@@ -14,13 +14,13 @@ export interface CsvValidationResult {
 export class CsvValidator {
   private static readonly REQUIRED_HEADERS = ['tahun', 'kategori', 'parameter', 'nilai'];
   private static readonly ALLOWED_CATEGORIES = [
-    'assumption', 'economy', 'populasi', 'pertanian', 'peternakan', 'energy supply'
+    'assumption', 'economy', 'populasi', 'pertanian', 'peternakan', 'energy supply', 'perikanan'
   ];
-  
+
   private static readonly CATEGORY_PARAMETERS = {
     assumption: [
       'falkenmark standard: no stress',
-      'falkenmark standard: stress', 
+      'falkenmark standard: stress',
       'falkenmark standard: scarcity',
       'electricity per capita national [kwh/cap/year]'
     ],
@@ -52,6 +52,9 @@ export class CsvValidator {
       'laju perubahan ternak sapi [1/tahun]',
       'laju perubahan ternak kambing [1/tahun]'
     ],
+    perikanan: [
+      'laju perubahan area perikanan [1/tahun]',
+    ],
     'energy supply': ['availability factor']
   };
 
@@ -62,7 +65,7 @@ export class CsvValidator {
 
   static validateRow(row: any[], rowNumber: number): CsvValidationError[] {
     const errors: CsvValidationError[] = [];
-    
+
     // Check if row has required number of columns
     if (row.length < this.REQUIRED_HEADERS.length) {
       errors.push({
@@ -148,11 +151,11 @@ export class CsvValidator {
     if (!this.validateHeaders(headers)) {
       return {
         isValid: false,
-        errors: [{ 
-          row: 1, 
-          field: 'headers', 
-          value: headers, 
-          message: `Header mismatch. Expected: ${this.REQUIRED_HEADERS.join(', ')}` 
+        errors: [{
+          row: 1,
+          field: 'headers',
+          value: headers,
+          message: `Header mismatch. Expected: ${this.REQUIRED_HEADERS.join(', ')}`
         }],
         validRows: []
       };
@@ -165,7 +168,7 @@ export class CsvValidator {
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       const rowErrors = this.validateRow(row, i + 1);
-      
+
       if (rowErrors.length === 0) {
         const cleanNilai = row[3]?.toString().replace(/[\s,]/g, ''); // Remove spaces and commas
         validRows.push({
