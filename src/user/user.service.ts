@@ -9,9 +9,9 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UserService {
     private readonly logger = new Logger(UserService.name)
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) { }
 
-    async create (dto: CreateUserDto, currentUserId: string) {
+    async create(dto: CreateUserDto, currentUserId: string) {
         try {
             const hashedPassword = await bcrypt.hash(dto.password, 10)
             const user = await this.prisma.user.create({
@@ -20,6 +20,8 @@ export class UserService {
                     password: hashedPassword,
                     name: dto.name,
                     roleId: dto.roleId,
+                    cityId: dto.cityId,
+                    institutionId: dto.institutionId,
                     updatedBy: currentUserId
                 },
                 include: {
@@ -40,7 +42,7 @@ export class UserService {
         })
     }
 
-    async findOne(id: string){
+    async findOne(id: string) {
         const user = await this.prisma.user.findUnique({
             where: { id, deletedAt: null },
             include: { role: true }
@@ -52,7 +54,7 @@ export class UserService {
         return user
     }
 
-    async update(id: string, dto: UpdateUserDto, currentUserId: string){
+    async update(id: string, dto: UpdateUserDto, currentUserId: string) {
         try {
             let hashedPassword: string | undefined = undefined;
             if (dto.password) {
@@ -66,7 +68,7 @@ export class UserService {
                     name: dto.name,
                     roleId: dto.roleId,
                     updatedBy: currentUserId,
-                    ...(hashedPassword ? { password: hashedPassword }: {})
+                    ...(hashedPassword ? { password: hashedPassword } : {})
                 },
                 include: {
                     role: true,
@@ -91,6 +93,18 @@ export class UserService {
             return user
         } catch (error) {
 
+        }
+    }
+
+    async count() {
+        try {
+            const total = await this.prisma.user.count({
+                where: { deletedAt: null }
+            })
+            return total
+        } catch (error) {
+            this.logger.error(`Count user failed: ${error.message}`)
+            throw new InternalServerErrorException('Failed to count user')
         }
     }
 }

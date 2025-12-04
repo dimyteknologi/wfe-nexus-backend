@@ -40,6 +40,7 @@ export class AuthService {
             sub: user.id,
             userName: user.name,
             role: user.role.name,
+            cityId: user.cityId,
             permissions
         }
         const access_token = this.jwt.sign(payload)

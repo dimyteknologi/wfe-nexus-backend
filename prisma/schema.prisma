@@ -3,46 +3,272 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  roleId    String
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
-  updatedBy String
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  name          String
+  roleId        String
+  role          Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  cityId        String
+  cities        Cities       @relation(fields: [cityId], references: [id])
+  institutionId String
+  institution   Institution  @relation(fields: [institutionId], references: [id])
+  scenarios     Scenario[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  updatedBy     String
 }
 
 model Role {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  users     User[]
+  id          String           @id @default(uuid())
+  name        String           @unique
+  users       User[]
   permissions RolePermission[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
-  updatedBy String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime?
+  deletedAt   DateTime?
+  updatedBy   String
 }
 
 model Permission {
-  id                String    @id @default(uuid())
-  permissionName    String
-  permissionCode    String    @unique
-  description       String?
-  roles             RolePermission[]
+  id               String           @id @default(uuid())
+  permissionName   String
+  permissionCode   String           @unique
+  description      String?
+  roles            RolePermission[]
 }
 
 model RolePermission {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   roleId       String
   permissionId String
-  role         Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id])
+}
+
+model Institution {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  users     User[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+  deletedAt DateTime?
+  updatedBy String
+  
+  @@map("institution")
+}
+
+model Cities {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  users       User[]
+  scenarios   Scenario[]
+  gdrp        GDRP[]
+  population  Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
+
+  @@map("cities")
+}
+
+model Years {
+  id         String @id @default(uuid())
+  year       Int    @unique
+  gdrp       GDRP[]
+  population Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
+
+  @@map("year")
+}
+
+model Scenario {
+  id            String                  @id @default(uuid())
+  name          String
+  userId        String
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cityId        String
+  city          Cities                  @relation(fields: [cityId], references: [id])
+  gdrp          GDRP[]
+  population    Population[]
+  agriculture   Agriculture[]
+  livestock     Livestock[]
+  fisheries     Fisheries[]
+  assumptions   Assumption[]
+  energySupply  EnergySupply[]
+  configurations ScenarioConfiguration[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime?
+  deletedAt     DateTime?
+  updatedBy     String
+
+  @@map("scenario")
+}
+
+model ScenarioConfiguration {
+  id         String    @id @default(uuid())
+  scenarioId String
+  scenario   Scenario  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  category  String
+  subType   String
+  period    String
+  value     Float
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime?
+
+  @@index([category])
+  @@index([subType])
+  @@index([period])
+  @@map("scenario_configuration")
+}
+
+model DataType {
+  id          String @id @default(uuid())
+  name        String @unique
+  gdrp        GDRP[]
+  population  Population[]
+  agriculture Agriculture[]
+  livestock   Livestock[]
+  fisheries   Fisheries[]
+  assumptions Assumption[]
+  energySupply EnergySupply[]
+
+  @@map("data_type")
+}
+
+model Population {
+  id          String    @id @default(uuid())
+  city        Cities    @relation(fields: [cityId], references: [id])
+  cityId      String
+  year        Years     @relation(fields: [yearId], references: [id])
+  yearId      String
+  dataType    DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId  String
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId  String?
+  male        Float
+  female      Float
+  total       Float
+  createdAt   DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId])
+  @@map("population")
+}
+
+model GDRP {
+  id          String    @id @default(uuid())
+  city        Cities    @relation(fields: [cityId], references: [id])
+  cityId      String
+  year        Years     @relation(fields: [yearId], references: [id])
+  yearId      String
+  dataType    DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId  String
+  scenario    Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId  String?
+  value       Float
+  sector      String
+  createdAt   DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, sector])
+  @@map("gdrp")
+}
+
+model Agriculture {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  rice_cultivation_area Float
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId])
+  @@map("agriculture")
+}
+
+model Livestock {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  livestock_type        String
+  change_rate           Float?
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, livestock_type])
+  @@map("livestock")
+}
+
+model Fisheries {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  growth_rate           Float?
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId])
+  @@map("fisheries")
+}
+
+model Assumption {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  parameter             String
+  value                 Float
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, parameter])
+  @@map("assumption")
+}
+
+model EnergySupply {
+  id                    String    @id @default(uuid())
+  city                  Cities    @relation(fields: [cityId], references: [id])
+  cityId                String
+  year                  Years     @relation(fields: [yearId], references: [id])
+  yearId                String
+  dataType              DataType  @relation(fields: [dataTypeId], references: [id])
+  dataTypeId            String
+  scenario              Scenario? @relation(fields: [scenarioId], references: [id])
+  scenarioId            String?
+  parameter             String
+  value                 Float
+  createdAt             DateTime  @default(now())
+
+  @@unique([yearId, cityId, dataTypeId, scenarioId, parameter])
+  @@map("energy_supply")
 }
