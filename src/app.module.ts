@@ -14,12 +14,25 @@ import { InstitusiModule } from './institusi/institusi.module';
 import { ScenarioModule } from './scenario/scenario.module';
 import { BaseDataModule } from './base-data/base-data.module';
 import { SimulationModule } from './simulation/simulation.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true}),
+    ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
     AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule, ScenarioModule, BaseDataModule, SimulationModule],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [
+    AppService,
+    PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    }
+  ],
 })
-export class AppModule {}
+export class AppModule { }

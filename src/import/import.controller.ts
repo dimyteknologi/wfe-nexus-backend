@@ -1,9 +1,9 @@
-import { 
-  Controller, 
-  Post, 
-  UseInterceptors, 
-  UploadedFile, 
-  BadRequestException, 
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
   UseGuards,
   Req
 } from '@nestjs/common';
@@ -19,12 +19,14 @@ import { Permissions } from 'src/auth/decorators/roles.decorator';
 @ApiBearerAuth('JWT-auth')
 @Controller('import')
 export class ImportController {
-  constructor(private readonly importService: ImportService) {}
+  constructor(private readonly importService: ImportService) { }
 
   @Post('validate')
   @Permissions('manage:data')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ 
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  }))
+  @ApiOperation({
     summary: 'Validasi file CSV sebelum import',
     description: 'Melakukan validasi format dan struktur file CSV tanpa melakukan import data'
   })
@@ -42,13 +44,13 @@ export class ImportController {
       }
     }
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Hasil validasi file CSV' 
+  @ApiResponse({
+    status: 200,
+    description: 'Hasil validasi file CSV'
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid file or wrong format' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid file or wrong format'
   })
   async validateCsv(@UploadedFile() file: Express.Multer.File): Promise<any> {
     if (!file) {
@@ -64,8 +66,10 @@ export class ImportController {
 
   @Post('csv')
   @Permissions('manage:data')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ 
+  @UseInterceptors(FileInterceptor('file', {
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  }))
+  @ApiOperation({
     summary: 'Import data from CSV file',
     description: 'Upload CSV file with header format: year, category, parameter, value. Supported categories: population, gdrp, agriculture, livestock, fisheries. The data will be imported for the city associated with the authenticated user.'
   })
@@ -83,18 +87,18 @@ export class ImportController {
       }
     }
   })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Data imported successfully', 
-    type: ImportResultDto 
+  @ApiResponse({
+    status: 200,
+    description: 'Data imported successfully',
+    type: ImportResultDto
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Invalid file or wrong format' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid file or wrong format'
   })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'No permission to import data' 
+  @ApiResponse({
+    status: 403,
+    description: 'No permission to import data'
   })
   async importCsv(
     @UploadedFile() file: Express.Multer.File,

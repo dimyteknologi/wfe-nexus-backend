@@ -33,7 +33,8 @@ export class PermissionsGuard implements CanActivate {
         message: 'User not authenticated',
         error: 'Forbidden',
         statusCode: 403,
-        details: 'No user found in request',
+        details: 'No user found in request', // Consider removing this too if strict
+
       });
     }
 
@@ -54,11 +55,7 @@ export class PermissionsGuard implements CanActivate {
         error: 'Forbidden',
         statusCode: 403,
         details: {
-          required: required,
-          userHas: userPermissionCodes,
-          missing: missingPermissions,
-          userId: user?.userId || user?.id,
-          userRole: user?.role?.name,
+          message: 'You do not have the required permissions to access this resource',
         },
       });
     }

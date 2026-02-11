@@ -28,7 +28,9 @@ export class UserService {
                     role: true,
                 }
             })
-            return user
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...result } = user;
+            return result;
         } catch (error) {
             this.logger.error(`Create user failed: ${error.message}`)
             throw new InternalServerErrorException('Failed to create user')
@@ -36,10 +38,15 @@ export class UserService {
     }
 
     async findAll() {
-        return this.prisma.user.findMany({
+        const users = await this.prisma.user.findMany({
             where: { deletedAt: null },
             include: { role: true }
-        })
+        });
+        return users.map(user => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...result } = user;
+            return result;
+        });
     }
 
     async findOne(id: string) {
@@ -51,7 +58,9 @@ export class UserService {
         if (!user) {
             throw new NotFoundException('User not found')
         }
-        return user
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...result } = user;
+        return result;
     }
 
     async update(id: string, dto: UpdateUserDto, currentUserId: string) {
@@ -74,7 +83,9 @@ export class UserService {
                     role: true,
                 }
             })
-            return user
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...result } = user;
+            return result;
         } catch (error) {
             this.logger.error(`Update user failed: ${error.message}`)
             throw new InternalServerErrorException('Failed to update user')
@@ -90,7 +101,9 @@ export class UserService {
                     updatedBy: currentUserId
                 }
             })
-            return user
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...result } = user;
+            return result;
         } catch (error) {
 
         }
