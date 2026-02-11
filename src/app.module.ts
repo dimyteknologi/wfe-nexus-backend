@@ -14,6 +14,7 @@ import { InstitusiModule } from './institusi/institusi.module';
 import { ScenarioModule } from './scenario/scenario.module';
 import { BaseDataModule } from './base-data/base-data.module';
 import { SimulationModule } from './simulation/simulation.module';
+import { AuditService } from './audit/audit.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 

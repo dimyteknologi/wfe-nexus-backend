@@ -19,10 +19,29 @@ model User {
   institutionId String
   institution   Institution  @relation(fields: [institutionId], references: [id])
   scenarios     Scenario[]
+  auditLogs     AuditLog[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime?
   deletedAt     DateTime?
   updatedBy     String
+  failedLoginAttempts Int @default(0)
+  lockoutUntil  DateTime?
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  resource  String
+  details   String?
+  ipAddress String?
+  userAgent String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@map("audit_log")
 }
 
 model Role {
