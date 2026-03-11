@@ -23,7 +23,7 @@ import { APP_GUARD } from '@nestjs/core';
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 10,
+      limit: 25,
     }]),
     AuthModule, UserModule, RoleModule, PermissionsModule, KotaModule, TahunModule, ImportModule, InstitusiModule, ScenarioModule, BaseDataModule, SimulationModule],
   controllers: [AppController],
